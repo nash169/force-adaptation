@@ -17,7 +17,8 @@ def options(opt):
     opt.load("compiler_cxx")
 
     # Load tools options
-    opt.load("flags eigen corrade utils_cpp", tooldir="waf_tools")
+    opt.load("flags eigen control_lib integrator_lib kernel_lib utils_cpp",
+             tooldir="waf_tools")
 
     # Add options
     opt.add_option("--shared",
@@ -28,13 +29,6 @@ def options(opt):
                    action="store_true",
                    help="build static library")
 
-    opt.add_option(
-        "--parallel",
-        action="store_true",
-        help="enable multi-threading",
-        dest="parallel",
-    )
-
 
 def configure(cfg):
     # OSX/Mac uses .dylib and GNU/Linux .so
@@ -44,7 +38,7 @@ def configure(cfg):
     cfg.load("compiler_cxx")  # cfg.load("clang_compilation_database")
 
     # Define require libraries
-    cfg.get_env()["requires"] += ["EIGEN", "CONTROL", "INTEGRATOR", "KERNEL"]
+    cfg.get_env()["requires"] += ["EIGEN"]
 
     # Load tools configuration
     cfg.load("flags eigen control_lib integrator_lib kernel_lib utils_cpp",
