@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #include <force_adaptation/Dynamics.hpp>
 
@@ -15,6 +15,12 @@ int main(int argc, char const* argv[])
     size_t resolution = 100;
     Dynamics my_ds;
 
+    // Rotation
+    Eigen::Matrix3d m;
+    m = Eigen::AngleAxisd(0.25*M_PI, Eigen::Vector3d::UnitX())
+    * Eigen::AngleAxisd(0.5*M_PI,  Eigen::Vector3d::UnitY())
+    * Eigen::AngleAxisd(0.33*M_PI, Eigen::Vector3d::UnitZ());
+
     // Plane
     double length = 10, width = 5;
     Eigen::Vector3d reference = Eigen::Vector3d::Zero();
@@ -27,7 +33,7 @@ int main(int argc, char const* argv[])
     Y = Eigen::VectorXd::LinSpaced(resolution, -width / 2, width / 2).replicate(1, resolution);
     plane_points.col(0) = X.reshaped();
     plane_points.col(1) = Y.reshaped();
-    plane_embedding = my_ds.planeEmbedding(plane_points, reference, base);
+    plane_embedding = my_ds.planeEmbedding(plane_points, reference, m);
 
     // Circle
     double radius = 1;
@@ -36,7 +42,7 @@ int main(int argc, char const* argv[])
     Eigen::MatrixXd circle_points(resolution, 2), circle_embedding(resolution, 3);
     angles = Eigen::VectorXd::LinSpaced(resolution, 0, 2 * M_PI);
     circle_points = my_ds.circle(angles, radius, center);
-    circle_embedding = my_ds.planeEmbedding(circle_points, reference, base);
+    circle_embedding = my_ds.planeEmbedding(circle_points, reference, m);
 
     // Save matrices
     Eigen::MatrixXd plane(resolution * resolution, 5), circle(resolution, 6);
@@ -44,10 +50,9 @@ int main(int argc, char const* argv[])
     circle << angles, circle_points, circle_embedding;
 
     // Write
-    io_manager.setFile("rsc/plane.csv");
+    io_manager.setFile("rsc/data.csv");
     io_manager.write("plane", plane);
-    io_manager.setFile("rsc/circle.csv");
-    io_manager.write("circle", circle);
+    io_manager.append("circle", circle);
 
     return 0;
 }

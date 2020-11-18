@@ -14,8 +14,9 @@ namespace force_adaptation {
         {
         }
 
-        void circularMotion()
+        Eigen::MatrixXd circularMotion()
         {
+
         }
 
         Eigen::MatrixXd circle(const Eigen::VectorXd& angle, double radius, const Eigen::Vector2d& center)

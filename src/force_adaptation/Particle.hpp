@@ -14,6 +14,16 @@ namespace force_adaptation {
         {
         }
 
+        Eigen::MatrixXd surfaceForce(const Eigen::MatrixXd& x, const Eigen::VectorXd& distance)
+        {
+            double a = 1000, b = 100000, c = 400000;
+            Eigen::Vector3d surface_force(x.rows());
+
+            surface_force = (-a - b*x.col(0).array().pow(2) - c*x.col(1).array().pow(2))*distance.array();
+            
+            return surface_force;
+        }
+
     private:
     };
 
