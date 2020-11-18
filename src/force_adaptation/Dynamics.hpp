@@ -14,7 +14,7 @@ namespace force_adaptation {
         {
         }
 
-        Eigen::MatrixXd circularMotion()
+        Eigen::MatrixXd circularMotion(const Eigen::MatrixXd& x, const Eigen::Vector3d& reference, const Eigen::Matrix3d& frame)
         {
 
         }
@@ -37,6 +37,16 @@ namespace force_adaptation {
                 plane.row(i) = reference + base.col(0) * x(i, 0) + base.col(1) * x(i, 1);
 
             return plane;
+        }
+
+        Eigen::Matrix2d rotation2D(const double angle)
+        {
+            Eigen::Matrix2d rotation;
+            
+            rotation << cos(angle), -sin(angle),
+                sin(angle), cos(angle);
+
+            return rotation;
         }
 
     private:
