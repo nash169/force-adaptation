@@ -24,9 +24,9 @@ colors = cm.jet(norm(surface_force))
 
 # Surface
 surf = ax.plot_surface(
-    data["plane"][:, 2].reshape(100, 100),
-    data["plane"][:, 3].reshape(100, 100),
-    data["plane"][:, 4].reshape(100, 100), facecolors=colors, linewidth=0, alpha=0.5)
+    data["plane"][:, 0].reshape(100, 100),
+    data["plane"][:, 1].reshape(100, 100),
+    data["plane"][:, 2].reshape(100, 100), facecolors=colors, linewidth=0, alpha=0.5)
 ax.set_xlim3d(-10, 10)
 ax.set_ylim3d(-10, 10)
 
@@ -36,8 +36,8 @@ sm.set_array(surface_force)
 fig1.colorbar(sm, shrink=0.5, aspect=5)
 
 # Circle motion
-ax.plot(data["circle"][:, 3], data["circle"]
-        [:, 4], data["circle"][:, 5], color='b', linewidth=3)
+ax.plot(data["circle"][:, 0], data["circle"]
+        [:, 1], data["circle"][:, 2], color='b', linewidth=3)
 
 
 # 3D load distribution
