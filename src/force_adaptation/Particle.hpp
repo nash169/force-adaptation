@@ -18,7 +18,7 @@ namespace force_adaptation {
         Eigen::VectorXd surfaceForce(const Eigen::MatrixXd& x)
         {
             Eigen::VectorXd surface_force(x.rows()), negative_altitude(x.rows());
-            negative_altitude = -x.col(1);
+            negative_altitude = -x.col(2);
 
             surface_force = (x.col(1).array()*x.col(0).array().sin() - x.col(0).array()*x.col(1).array().cos())*negative_altitude.array().exp();
             

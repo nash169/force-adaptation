@@ -10,7 +10,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from utils import get_data
 
-data = get_data(sys.argv[1], "plane", "circle", "force")
+data = get_data(sys.argv[1], "plane", "circle", "force", "dynamics")
 
 
 fig1 = plt.figure()
@@ -29,21 +29,31 @@ surf = ax.plot_surface(
     data["plane"][:, 2].reshape(100, 100), facecolors=colors, linewidth=0, alpha=0.5)
 ax.set_xlim3d(-10, 10)
 ax.set_ylim3d(-10, 10)
+ax.set_zlim3d(-10, 10)
 
 # Colorbar
 sm = plt.cm.ScalarMappable(cmap=cm.jet, norm=norm)
 sm.set_array(surface_force)
 fig1.colorbar(sm, shrink=0.5, aspect=5)
 
-# Circle motion
+# Circle
 ax.plot(data["circle"][:, 0], data["circle"]
         [:, 1], data["circle"][:, 2], color='b', linewidth=3)
 
+# Motion
+ax.plot(data["dynamics"][:, 0], data["dynamics"][:, 1], data["dynamics"][:, 2])
 
-# 3D load distribution
-fig2 = plt.figure()
-ax = fig2.add_subplot(111, projection="3d")
-ax.plot_surface(data["force"][:, 0].reshape(100, 100), data["force"][:, 1].reshape(
-    100, 100), data["force"][:, 2].reshape(100, 100), cmap=cm.jet)
+
+# # 3D load distribution
+# fig2 = plt.figure()
+# ax = fig2.add_subplot(111, projection="3d")
+# ax.plot_surface(data["force"][:, 0].reshape(100, 100), data["force"][:, 1].reshape(
+#     100, 100), data["force"][:, 2].reshape(100, 100), cmap=cm.jet)
+
+# # Vector Field
+# fig = plt.figure()
+# ax = fig.gca(projection='3d')
+# ax.quiver(data["dynamics"][:, 0].reshape(20, 20, 20), data["dynamics"][:, 1].reshape(20, 20, 20), data["dynamics"][:, 2].reshape(20, 20, 20),
+#           data["dynamics"][:, 0].reshape(20, 20, 20), data["dynamics"][:, 1].reshape(20, 20, 20), data["dynamics"][:, 2].reshape(20, 20, 20), length=0.1)
 
 plt.show()

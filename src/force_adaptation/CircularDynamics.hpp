@@ -7,7 +7,7 @@
 namespace force_adaptation {
     class CircularDynamics {
     public:
-        CircularDynamics(const double radius = 1, const Eigen::Vector2d& circle_reference = Eigen::Vector2d::Zero(), const Eigen::Vector3d& plane_reference = Eigen::Vector3d::Zero(), const Eigen::Matrix3d& frame = Eigen::Matrix3d::Identity(), const double step = 0.01) : _radius(radius), _circle_reference(circle_reference), _plane_reference(plane_reference), _frame(frame), _step(step) {}
+        CircularDynamics(const double radius = 1, const Eigen::Vector2d& circle_reference = Eigen::Vector2d::Zero(), const Eigen::Vector3d& plane_reference = Eigen::Vector3d::Zero(), const Eigen::Matrix3d& frame = Eigen::Matrix3d::Identity()) : _radius(radius), _circle_reference(circle_reference), _plane_reference(plane_reference), _frame(frame) {}
 
         ~CircularDynamics() {}
 
@@ -46,28 +46,35 @@ namespace force_adaptation {
             return *this;
         }
 
-        Eigen::MatrixXd velocity(const Eigen::MatrixXd& x)
+        Eigen::Vector3d dynamics(const double& t, const Eigen::VectorXd& x, const Eigen::VectorXd& u)
         {
             double r = 0;
-            Eigen::Vector3d proj;
             Eigen::Vector2d planar_vel;
+            Eigen::Vector3d velocity, proj;
 
-            for (size_t i = 0; i < x.rows(); i++){
-                proj = _frame.transpose() * (x.row(i).transpose() - _plane_reference);
-                r = proj.segment(0,1).norm();
-                planar_vel(0) = _radius - r; planar_vel(1) = r*M_PI;
-                _velocity.row(i).segment(0,1) = rotation2D(atan2(proj(1), proj(2))).transpose()*planar_vel;
-                _velocity(i,2) = proj(2);
-            }
+            Eigen::Map<Eigen::MatrixXd> center(_circle_reference.data(), 1, 2);
+            Eigen::VectorXd offset(3);
+            offset = planeEmbedding(center).row(0);
 
-            return _velocity;
-        }
+            // Projection over the plane reference frame
+            proj = _frame.transpose() * (x  - offset);
 
-        Eigen::MatrixXd position(const Eigen::MatrixXd& x)
-        {
-            _position = _position + _step * _velocity;
+            // Current rotation radius
+            r = proj.segment(0,2).norm();
 
-            return _position;
+            // Planar velocity
+            planar_vel(0) = _radius - r; 
+            planar_vel(1) = r*M_PI;
+
+            // Plane distace dependent scaling of planar velocity
+            planar_vel *= exp(-proj(2));
+
+            velocity.segment(0,2) = rotation2D(atan2(proj(1), proj(0)))*planar_vel;
+            
+            // Vertical velocity
+            velocity(2) = -proj(2);
+
+            return _frame*velocity;
         }
 
         Eigen::MatrixXd circleEmbedding(const Eigen::VectorXd& x)
@@ -95,8 +102,6 @@ namespace force_adaptation {
         Eigen::Vector2d _circle_reference;
         Eigen::Vector3d _plane_reference;
         Eigen::Matrix3d _frame;
-
-        Eigen::MatrixXd _position, _velocity;
 
         Eigen::MatrixXd circle(const Eigen::VectorXd& angle)
         {
