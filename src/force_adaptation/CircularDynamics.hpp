@@ -57,24 +57,24 @@ namespace force_adaptation {
             offset = planeEmbedding(center).row(0);
 
             // Projection over the plane reference frame
-            proj = _frame.transpose() * (x  - offset);
+            proj = _frame.transpose() * (x - offset);
 
             // Current rotation radius
-            r = proj.segment(0,2).norm();
+            r = proj.segment(0, 2).norm();
 
             // Planar velocity
-            planar_vel(0) = _radius - r; 
-            planar_vel(1) = r*M_PI;
+            planar_vel(0) = _radius - r;
+            planar_vel(1) = r * M_PI;
 
             // Plane distace dependent scaling of planar velocity
             planar_vel *= exp(-proj(2));
 
-            velocity.segment(0,2) = rotation2D(atan2(proj(1), proj(0)))*planar_vel;
-            
+            velocity.segment(0, 2) = rotation2D(atan2(proj(1), proj(0))) * planar_vel;
+
             // Vertical velocity
             velocity(2) = -proj(2);
 
-            return _frame*velocity;
+            return _frame * velocity;
         }
 
         Eigen::MatrixXd circleEmbedding(const Eigen::VectorXd& x)
@@ -116,7 +116,7 @@ namespace force_adaptation {
         Eigen::Matrix2d rotation2D(const double angle)
         {
             Eigen::Matrix2d rotation;
-            
+
             rotation << cos(angle), -sin(angle),
                 sin(angle), cos(angle);
 

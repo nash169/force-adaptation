@@ -1,12 +1,8 @@
-#include <iostream>
+#include <force_adaptation/ForceAdaptation.hpp>
 
-#include <Eigen/Geometry>
-
-#include <force_adaptation/CircularDynamics.hpp>
-#include <force_adaptation/Particle.hpp>
-
-#include <utils_cpp/UtilsCpp.hpp>
+// Dependencies
 #include <integrator_lib/Integrate.hpp>
+#include <utils_cpp/UtilsCpp.hpp>
 
 using namespace force_adaptation;
 using namespace integrator_lib;
@@ -14,7 +10,7 @@ using namespace integrator_lib;
 int main(int argc, char const* argv[])
 {
     size_t resolution = 100;
-    
+
     // Circle
     double radius = 1;
     Eigen::Vector2d circle_reference;
@@ -23,33 +19,30 @@ int main(int argc, char const* argv[])
     Eigen::VectorXd angles(resolution);
     angles = Eigen::VectorXd::LinSpaced(resolution, 0, 2 * M_PI);
 
-    
     // Plane
     double length = 10, width = 5;
     Eigen::Vector3d plane_reference;
-    plane_reference << 1,2,-3;
+    plane_reference << 1, 2, -3;
     Eigen::Matrix3d frame;
-    frame = Eigen::AngleAxisd(0.25*M_PI, Eigen::Vector3d::UnitX())
-    * Eigen::AngleAxisd(0*M_PI,  Eigen::Vector3d::UnitY())
-    * Eigen::AngleAxisd(0*M_PI, Eigen::Vector3d::UnitZ());
+    frame = Eigen::AngleAxisd(0.25 * M_PI, Eigen::Vector3d::UnitX())
+        * Eigen::AngleAxisd(0 * M_PI, Eigen::Vector3d::UnitY())
+        * Eigen::AngleAxisd(0 * M_PI, Eigen::Vector3d::UnitZ());
 
     Eigen::MatrixXd X(resolution, resolution), Y(resolution, resolution), plane_points(resolution * resolution, 2);
     X = Eigen::RowVectorXd::LinSpaced(resolution, -length / 2, length / 2).replicate(resolution, 1);
     Y = Eigen::VectorXd::LinSpaced(resolution, -width / 2, width / 2).replicate(1, resolution);
     plane_points.col(0) = X.reshaped();
     plane_points.col(1) = Y.reshaped();
-    
-    
+
     // Particle & Load distribution
     Particle my_particle;
 
-    Eigen::MatrixXd surface_force(resolution*resolution, 3);
-    Eigen::MatrixXd particle_pos(resolution*resolution, 3);
-    particle_pos << plane_points, Eigen::VectorXd::Zero(resolution*resolution);
-    surface_force.block(0,0, surface_force.rows(), 2) = plane_points;
+    Eigen::MatrixXd surface_force(resolution * resolution, 3);
+    Eigen::MatrixXd particle_pos(resolution * resolution, 3);
+    particle_pos << plane_points, Eigen::VectorXd::Zero(resolution * resolution);
+    surface_force.block(0, 0, surface_force.rows(), 2) = plane_points;
     surface_force.col(2) = my_particle.surfaceForce(particle_pos);
-    
-    
+
     // Dynamics and embeddings
     CircularDynamics my_ds(radius, circle_reference, plane_reference, frame);
 
@@ -73,7 +66,6 @@ int main(int argc, char const* argv[])
 
     while (time < max_time && index < num_steps) {
         x = myInt.integrate(my_ds, &CircularDynamics::dynamics, time, x, u);
-        // x = x + my_ds.dynamics(time, x, u)*step;
 
         time += step;
         index++;
@@ -81,7 +73,7 @@ int main(int argc, char const* argv[])
         log_t(index) = time;
         log_x.row(index) = x;
     }
-    
+
     // Write
     utils_cpp::FileManager io_manager;
 

@@ -2,7 +2,6 @@
 Repository containing force adaptation GPR-based algorithm.
 
 ### Authors/Maintainers
-
 - Bernardo Fichera (bernardo.fichera@epfl.ch)
 - Walid Amanhoud (walid.amanhoud@epfl.ch)
 
@@ -76,10 +75,6 @@ In order to set the desired compiler define the environment variable CXX=<g++,cl
 It is highly recommended to compile with AVX support
 ```sh
 waf (./waf) configure --optional-flags
-```
-Activate multi-threading outside EIGEN
-```sh
-waf (./waf) configure --multi-threading
 ```
 Compile static library (default option)
 ```sh
