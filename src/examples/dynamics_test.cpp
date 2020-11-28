@@ -77,7 +77,7 @@ int main(int argc, char const* argv[])
     // Write
     utils_cpp::FileManager io_manager;
 
-    io_manager.setFile("rsc/data.csv");
+    io_manager.setFile("rsc/data_force.csv");
     io_manager.write("plane", plane_embedding);
     io_manager.append("circle", circle_embedding);
     io_manager.append("force", surface_force);
