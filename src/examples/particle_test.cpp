@@ -50,7 +50,7 @@ int main(int argc, char const* argv[])
     using Exp = kernels::Exp<Params>;
     Exp kernel;
 
-    using SumExp = kernel_lib::utils::Expansion<ParamsDefaults, Exp>;
+    using SumExp = kernel_lib::utils::Expansion<Params, Exp>;
 
     // Particle
     double mass = 1,
@@ -93,20 +93,19 @@ int main(int argc, char const* argv[])
         // Step
         particle.setInput(u);
         particle.update(time);
-        x = particle.state();
 
         time += step;
         index++;
 
         log_t(index) = time;
-        log_x.row(index) = x;
+        log_x.row(index) = particle.state();
         log_u.row(index) = u;
     }
 
     // Write
     utils_cpp::FileManager io_manager;
 
-    io_manager.setFile("rsc/data_control.csv");
+    io_manager.setFile("rsc/data_particle.csv");
     io_manager.write("time", log_t);
     io_manager.append("state", log_x);
     io_manager.append("action", log_u);
