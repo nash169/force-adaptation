@@ -22,18 +22,8 @@ namespace force_adaptation {
 
         void update(const double& time)
         {
-            // Eigen::VectorXd pos(3), vel(3), test(6);
-            // pos = _state.segment(0, 3);
-            // vel = _state.segment(2, 3);
-
-            // _state.tail(3) = _integrator.integrate(*this, &Particle::dynamics, time, vel, _input);
-
-            // auto identity = [](const double& t, const Eigen::VectorXd& x, const Eigen::VectorXd& u) { return x; };
-
-            // _state.head(3) = _integrator.integrate(identity, time, pos, _input);
-
-            _state.tail(3) = _state.tail(3) + 0.001 * dynamics(time, _state.tail(3), _input);
-            _state.head(3) = _state.head(3) + 0.001 * _state.tail(3);
+            _state.tail(3) = _integrator.integrate(*this, &Particle::acceleration, time, _state.tail(3), _input);
+            _state.head(3) = _integrator.integrate(*this, &Particle::velocity, time, _state.head(3), _input);
         }
 
         Eigen::VectorXd state()
@@ -67,15 +57,12 @@ namespace force_adaptation {
             return *this;
         }
 
-        // template <typename Integrator>
-        // Particle& setIntegrator(std::unique_ptr<Integrator>&& integrator)
-        // {
-        //     _integrator = std::move(integrator);
+        Eigen::VectorXd velocity(const double& t, const Eigen::VectorXd& x, const Eigen::VectorXd& u)
+        {
+            return _state.tail(3);
+        }
 
-        //     return *this;
-        // }
-
-        Eigen::VectorXd dynamics(const double& t, const Eigen::VectorXd& x, const Eigen::VectorXd& u)
+        Eigen::VectorXd acceleration(const double& t, const Eigen::VectorXd& x, const Eigen::VectorXd& u)
         {
             return u / _mass;
         }
@@ -110,18 +97,6 @@ namespace force_adaptation {
         Eigen::VectorXd _state, _input;
 
         integrator::ForwardEuler _integrator;
-
-        // template <typename D, typename B>
-        // std::unique_ptr<D> static_cast_ptr(std::unique_ptr<B>& base)
-        // {
-        //     return std::unique_ptr<D>(static_cast<D*>(base.release()));
-        // }
-
-        // template <typename D, typename B>
-        // std::unique_ptr<D> static_cast_ptr(std::unique_ptr<B>&& base)
-        // {
-        //     return std::unique_ptr<D>(static_cast<D*>(base.release()));
-        // }
     };
 
 } // namespace force_adaptation

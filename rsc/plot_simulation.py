@@ -10,12 +10,25 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from utils import get_data
 
-data = get_data(sys.argv[1], "time", "state", "action")
+data = get_data(sys.argv[1], "time", "state", "action", "plane", "circle")
 
 fig = plt.figure()
 ax = fig.gca(projection="3d")
 ax.plot(data["state"][:, 0], data["state"]
-        [:, 1], data["state"][:, 2], color='b', linewidth=3)
+        [:, 1], data["state"][:, 2], color='r', linewidth=1)
+
+surf = ax.plot_surface(
+    data["plane"][:, 0].reshape(100, 100),
+    data["plane"][:, 1].reshape(100, 100),
+    data["plane"][:, 2].reshape(100, 100), linewidth=0, alpha=0.5)
+
+ax.plot(data["circle"][:, 0], data["circle"]
+        [:, 1], data["circle"][:, 2], color='b', linewidth=3)
+
+ax.set_xlim3d(-6, 6)
+ax.set_ylim3d(-6, 6)
+ax.set_zlim3d(-6, 6)
+
 
 fig = plt.figure()
 ax = fig.gca()
