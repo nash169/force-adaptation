@@ -9,10 +9,17 @@
 namespace force_adaptation {
     using namespace integrator_lib;
 
+    struct DefaultParams {
+        struct integrator : public defaults::integrator {
+        };
+    };
+
+    template <typename Integrator = integrator::ForwardEuler<DefaultParams>>
     class Particle {
     public:
         Particle(const double mass = 1, const Eigen::Vector3d& reference = Eigen::Vector3d::Zero(), const Eigen::Matrix3d& frame = Eigen::Matrix3d::Identity(), const double step = 0.001) : _mass(mass), _frame(frame), _reference(reference)
         {
+            _integrator = Integrator();
             _integrator.setStep(step);
             _state = Eigen::VectorXd::Zero(6);
             _input = Eigen::VectorXd::Zero(3);
@@ -64,7 +71,7 @@ namespace force_adaptation {
 
         Eigen::VectorXd acceleration(const double& t, const Eigen::VectorXd& x, const Eigen::VectorXd& u)
         {
-            return u / _mass;
+            return (u + surfaceForce(x)) / _mass;
         }
 
         Eigen::Vector3d surfaceForce(const Eigen::VectorXd& x)
@@ -96,7 +103,7 @@ namespace force_adaptation {
 
         Eigen::VectorXd _state, _input;
 
-        integrator::ForwardEuler _integrator;
+        Integrator _integrator;
     };
 
 } // namespace force_adaptation

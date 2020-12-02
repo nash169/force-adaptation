@@ -7,6 +7,12 @@
 using namespace force_adaptation;
 using namespace integrator_lib;
 
+struct IntegratorParams {
+    struct integrator : public integrator_lib::defaults::integrator {
+        PARAM_SCALAR(double, step, 0.001);
+    };
+};
+
 int main(int argc, char const* argv[])
 {
     size_t resolution = 100;
@@ -35,7 +41,7 @@ int main(int argc, char const* argv[])
     plane_points.col(1) = Y.reshaped();
 
     // Particle & Load distribution
-    Particle my_particle;
+    Particle<> my_particle;
 
     Eigen::MatrixXd surface_force(resolution * resolution, 3);
     Eigen::MatrixXd particle_pos(resolution * resolution, 3);
@@ -59,7 +65,7 @@ int main(int argc, char const* argv[])
 
     x << 5, 5, 10;
 
-    integrator::ForwardEuler myInt(step);
+    integrator::ForwardEuler<IntegratorParams> myInt;
 
     log_t(index) = time;
     log_x.row(index) = x;
