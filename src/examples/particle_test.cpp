@@ -149,8 +149,6 @@ int main(int argc, char const* argv[])
     log_u.row(index) = u;
     log_x.row(index) = x;
 
-    // store.push_back(x.head(3));
-    // target.push_back(force_reference);
     store.row(index) = x.head(3);
     target(index) = force_reference;
 
