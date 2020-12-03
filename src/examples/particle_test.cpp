@@ -41,7 +41,12 @@ protected:
 };
 
 struct KernelParams {
-    struct kernel_exp : public kernel_lib::defaults::kernel_exp {
+    struct kernel : public kernel_lib::defaults::kernel {
+        PARAM_SCALAR(double, sigma_n, 0.0);
+        PARAM_SCALAR(double, sigma_f, 1.0);
+    };
+
+    struct rbf : public kernel_lib::defaults::rbf {
         PARAM_VECTOR(double, sigma, 1);
     };
 };
@@ -127,7 +132,7 @@ int main(int argc, char const* argv[])
 
     Eigen::MatrixXd store(dim_gpr, 3);
     Eigen::VectorXd target(dim_gpr), weights(dim_gpr);
-    SumExp psi;
+    SumRbf psi;
 
     // Simulation
     double time = 0, max_time = 30;
@@ -158,7 +163,7 @@ int main(int argc, char const* argv[])
         // Adaptation (activate after 100 steps)
         if (index >= 99) {
             if (!((index + 1) % update_freq)) {
-                weights = psi.kernel()(store, store).reshaped(dim_gpr, dim_gpr).colPivHouseholderQr().solve(target);
+                weights = psi.kernel()(store, store).colPivHouseholderQr().solve(target);
                 psi.setReference(store).setWeights(weights);
             }
             f_adapt(2) = psi(x.head(3).transpose())(0);
@@ -190,7 +195,7 @@ int main(int argc, char const* argv[])
             }
 
             store.row(index_ref) = x.head(3);
-            target(index_ref) = (f_adapt + frame.transpose() * u)(2) + force_reference;
+            target(index_ref) = frame.transpose().row(2) * particle.surfaceForce(Eigen::VectorXd(x.head(3))) - force_reference;
         }
 
         // Record
