@@ -149,6 +149,8 @@ int main(int argc, char const* argv[])
     log_u.row(index) = u;
     log_x.row(index) = x;
 
+    // store.push_back(x.head(3));
+    // target.push_back(force_reference);
     store.row(index) = x.head(3);
     target(index) = force_reference;
 
@@ -179,11 +181,12 @@ int main(int argc, char const* argv[])
         // Store & order points
         if (index < dim_gpr) {
             store.row(index) = x.head(3);
-            target(index) = (f_adapt + frame.transpose() * u)(2) + force_reference;
+            target(index) = frame.transpose().row(2) * particle.surfaceForce(Eigen::VectorXd(x.head(3))) - force_reference;
         }
         else {
             size_t index_ref;
             double ref, temp;
+
             for (size_t i = 0; i < dim_gpr; i++) {
                 temp = (store.row(i) - x.head(3).transpose()).norm();
                 if (temp > ref) {
