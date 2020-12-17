@@ -18,7 +18,7 @@ def build(bld):
 
     # Define additional required libraries for the examples
     example_required = {"particle_force.cpp": [
-        "INTEGRATOR", "UTILSCPP"], "particle_control.cpp": ["INTEGRATOR", "CONTROL", "KERNEL"]}
+        "INTEGRATOR", "UTILSCPP"], "particle_control.cpp": ["INTEGRATOR", "CONTROL", "KERNEL"], "temp.cpp": ["INTEGRATOR", "CONTROL", "KERNEL", "LIMBO"]}
 
     # Compile all the examples
     for example in sources:

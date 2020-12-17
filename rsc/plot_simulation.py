@@ -25,9 +25,9 @@ surf = ax.plot_surface(
 ax.plot(data["circle"][:, 0], data["circle"]
         [:, 1], data["circle"][:, 2], color='b', linewidth=3)
 
-ax.set_xlim3d(-6, 6)
-ax.set_ylim3d(-6, 6)
-ax.set_zlim3d(-6, 6)
+ax.set_xlim3d(-1, 1)
+ax.set_ylim3d(-1, 1)
+ax.set_zlim3d(-1, 1)
 
 
 fig = plt.figure()

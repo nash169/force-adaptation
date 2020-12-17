@@ -42,12 +42,27 @@ protected:
 
 struct KernelParams {
     struct kernel : public kernel_lib::defaults::kernel {
-        PARAM_SCALAR(double, sigma_n, 0.0);
-        PARAM_SCALAR(double, sigma_f, 1.0);
+        PARAM_SCALAR(double, sigma_n, 0.0039);
+        PARAM_SCALAR(double, sigma_f, 0.8298);
     };
 
     struct rbf : public kernel_lib::defaults::rbf {
-        PARAM_VECTOR(double, sigma, 1);
+        PARAM_SCALAR(Covariance, type, CovarianceType::DIAGONAL);
+        PARAM_VECTOR(double, sigma, 0.707, 0.0448, 0.0068);
+    };
+};
+
+struct ExpansionParams {
+    struct kernel : public kernel_lib::defaults::kernel {
+        PARAM_SCALAR(double, sigma_f, 0.8298);
+    };
+
+    struct rbf : public kernel_lib::defaults::rbf {
+        PARAM_SCALAR(Covariance, type, CovarianceType::DIAGONAL);
+        PARAM_VECTOR(double, sigma, 0.707, 0.0448, 0.0068);
+    };
+
+    struct expansion : public kernel_lib::defaults::expansion {
     };
 };
 
@@ -92,14 +107,14 @@ int main(int argc, char const* argv[])
     size_t resolution = 100;
 
     // Circle
-    double radius = 1;
+    double radius = 0.05;
     Eigen::Vector2d circle_reference;
-    circle_reference << 2, 0;
+    circle_reference << 0, 0;
     Eigen::VectorXd angles(resolution);
     angles = Eigen::VectorXd::LinSpaced(resolution, 0, 2 * M_PI);
 
     // Plane
-    double length = 10, width = 5;
+    double length = 1, width = 0.5;
     Eigen::Vector3d plane_reference;
     plane_reference << 1, 2, -3;
     Eigen::Matrix3d frame;
@@ -111,7 +126,7 @@ int main(int argc, char const* argv[])
     plane_points.col(1) = Y.reshaped();
 
     // Dynamics and embeddings
-    CircularDynamics circular_motion;
+    CircularDynamics circular_motion(radius);
     // CircularDynamics circular_motion(radius, circle_reference, plane_reference, frame);
     Eigen::MatrixXd plane_embedding(resolution * resolution, 3), circle_embedding(resolution, 3);
     plane_embedding = circular_motion.planeEmbedding(plane_points);
@@ -132,7 +147,9 @@ int main(int argc, char const* argv[])
 
     Eigen::MatrixXd store(dim_gpr, 3);
     Eigen::VectorXd target(dim_gpr), weights(dim_gpr);
-    SumRbf psi;
+
+    kernels::Rbf<KernelParams> k;
+    kernel_lib::utils::Expansion<ExpansionParams, kernels::Rbf<ExpansionParams>> psi;
 
     // Simulation
     double time = 0, max_time = 30;
@@ -141,7 +158,7 @@ int main(int argc, char const* argv[])
     Eigen::Vector3d u = Eigen::Vector3d::Zero(), f_adapt = Eigen::Vector3d::Zero();
     Eigen::VectorXd x(2 * dim), ref = Eigen::VectorXd::Zero(2 * dim), log_t(num_steps);
     Eigen::MatrixXd log_x(num_steps, 2 * dim), log_u(num_steps, dim);
-    x << 0, 0, 10, 0, 0, 0;
+    x << 0.1, 0, 0.2, 0, 0, 0;
 
     particle.setState(x).setInput(u);
 
@@ -163,14 +180,14 @@ int main(int argc, char const* argv[])
         // Adaptation (activate after 100 steps)
         if (index >= 99) {
             if (!((index + 1) % update_freq)) {
-                weights = psi.kernel()(store, store).colPivHouseholderQr().solve(target);
+                weights = k(store, store).colPivHouseholderQr().solve(target);
                 psi.setReference(store).setWeights(weights);
             }
             f_adapt(2) = psi(x.head(3).transpose())(0);
         }
 
         // Step
-        particle.setInput(u + frame * f_adapt);
+        particle.setInput(u + f_adapt);
         particle.update(time);
         x = particle.state();
 

@@ -17,7 +17,7 @@ def options(opt):
     opt.load("compiler_cxx")
 
     # Load tools options
-    opt.load("flags eigen control_lib integrator_lib kernel_lib utils_cpp",
+    opt.load("flags eigen control_lib integrator_lib kernel_lib utils_cpp limbo",
              tooldir="waf_tools")
 
     # Add options
@@ -41,7 +41,7 @@ def configure(cfg):
     cfg.get_env()["requires"] += ["EIGEN"]
 
     # Load tools configuration
-    cfg.load("flags eigen control_lib integrator_lib kernel_lib utils_cpp",
+    cfg.load("flags eigen control_lib integrator_lib kernel_lib utils_cpp limbo",
              tooldir="waf_tools")
 
     # Remove duplicates
