@@ -101,7 +101,9 @@ namespace force_adaptation {
         {
             Eigen::MatrixXd surface(x.rows(), 3);
 
-            surface = (x.col(1).array() * x.col(0).array().sin() - x.col(0).array() * x.col(1).array().cos());
+            surface << x, (x.col(1).array() * x.col(0).array().sin() - x.col(0).array() * x.col(1).array().cos());
+            surface = (_frame * surface.transpose()).transpose();
+            surface.rowwise() += _plane_reference.transpose();
 
             return surface;
         }

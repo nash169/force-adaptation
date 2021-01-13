@@ -13,94 +13,94 @@ using namespace integrator_lib;
 using namespace control_lib;
 using namespace kernel_lib;
 
-class FeedbackControl : public Control {
-public:
-    FeedbackControl() : Control(ControlMode::OPERATIONSPACE) {}
+// class FeedbackControl : public Control {
+// public:
+//     FeedbackControl() : Control(ControlMode::OPERATIONSPACE) {}
 
-    ~FeedbackControl() {}
+//     ~FeedbackControl() {}
 
-    void init() override
-    {
-        // Dimension controller
-        _dim = 3;
+//     void init() override
+//     {
+//         // Dimension controller
+//         _dim = 3;
 
-        // Controller gains
-        Eigen::MatrixXd dGains(_dim, _dim);
-        _controller.setGains("d", dGains);
-    }
+//         // Controller gains
+//         Eigen::MatrixXd dGains(_dim, _dim);
+//         _controller.setGains("d", dGains);
+//     }
 
-    Eigen::VectorXd update(const Eigen::VectorXd& state) override
-    {
-        return _controller.update(state);
-    }
+//     Eigen::VectorXd update(const Eigen::VectorXd& state) override
+//     {
+//         return _controller.update(state);
+//     }
 
-protected:
-    size_t _dim;
+// protected:
+//     size_t _dim;
 
-    controllers::Feedback _controller;
-};
+//     controllers::Feedback _controller;
+// };
 
-struct KernelParams {
-    struct kernel : public kernel_lib::defaults::kernel {
-        PARAM_SCALAR(double, sigma_n, 0.0039);
-        PARAM_SCALAR(double, sigma_f, 0.8298);
-    };
+// struct KernelParams {
+//     struct kernel : public kernel_lib::defaults::kernel {
+//         PARAM_SCALAR(double, sigma_n, 0.0039);
+//         PARAM_SCALAR(double, sigma_f, 0.8298);
+//     };
 
-    struct rbf : public kernel_lib::defaults::rbf {
-        PARAM_SCALAR(Covariance, type, CovarianceType::DIAGONAL);
-        PARAM_VECTOR(double, sigma, 0.707, 0.0448, 0.0068);
-    };
-};
+//     struct rbf : public kernel_lib::defaults::rbf {
+//         PARAM_SCALAR(Covariance, type, CovarianceType::DIAGONAL);
+//         PARAM_VECTOR(double, sigma, 0.707, 0.0448, 0.0068);
+//     };
+// };
 
-struct ExpansionParams {
-    struct kernel : public kernel_lib::defaults::kernel {
-        PARAM_SCALAR(double, sigma_f, 0.8298);
-    };
+// struct ExpansionParams {
+//     struct kernel : public kernel_lib::defaults::kernel {
+//         PARAM_SCALAR(double, sigma_f, 0.8298);
+//     };
 
-    struct rbf : public kernel_lib::defaults::rbf {
-        PARAM_SCALAR(Covariance, type, CovarianceType::DIAGONAL);
-        PARAM_VECTOR(double, sigma, 0.707, 0.0448, 0.0068);
-    };
+//     struct rbf : public kernel_lib::defaults::rbf {
+//         PARAM_SCALAR(Covariance, type, CovarianceType::DIAGONAL);
+//         PARAM_VECTOR(double, sigma, 0.707, 0.0448, 0.0068);
+//     };
 
-    struct expansion : public kernel_lib::defaults::expansion {
-    };
-};
+//     struct expansion : public kernel_lib::defaults::expansion {
+//     };
+// };
 
-struct IntegratorParams {
-    struct integrator : public integrator_lib::defaults::integrator {
-        PARAM_SCALAR(double, step, 0.001);
-    };
-};
+// struct IntegratorParams {
+//     struct integrator : public integrator_lib::defaults::integrator {
+//         PARAM_SCALAR(double, step, 0.001);
+//     };
+// };
 
-template <typename T>
-std::vector<T> slice(std::vector<T> const& v, int m, int n)
-{
-    auto first = v.cbegin() + m;
-    auto last = v.cbegin() + n + 1;
+// template <typename T>
+// std::vector<T> slice(std::vector<T> const& v, int m, int n)
+// {
+//     auto first = v.cbegin() + m;
+//     auto last = v.cbegin() + n + 1;
 
-    std::vector<T> vec(first, last);
-    return vec;
-}
+//     std::vector<T> vec(first, last);
+//     return vec;
+// }
 
-Eigen::MatrixXd generate_dataset(size_t dim, const std::vector<Eigen::Vector3d>& input)
-{
-    Eigen::MatrixXd output(input.size(), 3);
+// Eigen::MatrixXd generate_dataset(size_t dim, const std::vector<Eigen::Vector3d>& input)
+// {
+//     Eigen::MatrixXd output(input.size(), 3);
 
-    for (size_t i = 0; i < dim; i++)
-        output.row(i) = input.at(i); // input(i);
+//     for (size_t i = 0; i < dim; i++)
+//         output.row(i) = input.at(i); // input(i);
 
-    return output;
-}
+//     return output;
+// }
 
-Eigen::VectorXd generate_target(size_t dim, const std::vector<double>& input)
-{
-    Eigen::VectorXd output(input.size());
+// Eigen::VectorXd generate_target(size_t dim, const std::vector<double>& input)
+// {
+//     Eigen::VectorXd output(input.size());
 
-    for (size_t i = 0; i < dim; i++)
-        output(i) = input.at(i); // input(i);
+//     for (size_t i = 0; i < dim; i++)
+//         output(i) = input.at(i); // input(i);
 
-    return output;
-}
+//     return output;
+// }
 
 int main(int argc, char const* argv[])
 {

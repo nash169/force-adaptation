@@ -10,7 +10,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from utils import get_data
 
-data = get_data(sys.argv[1], "plane", "circle", "force", "dynamics")
+data = get_data(sys.argv[1], "plane", "surface", "circle", "force")
 
 
 fig1 = plt.figure()
@@ -40,9 +40,20 @@ fig1.colorbar(sm, shrink=0.5, aspect=5)
 ax.plot(data["circle"][:, 0], data["circle"]
         [:, 1], data["circle"][:, 2], color='b', linewidth=3)
 
-# Motion
-ax.plot(data["dynamics"][:, 0], data["dynamics"][:, 1], data["dynamics"][:, 2])
+ax.plot_surface(data["surface"][:, 0].reshape(100, 100), data["surface"][:, 1].reshape(
+    100, 100), data["surface"][:, 2].reshape(100, 100), cmap=cm.jet)
 
+# Motion
+# ax.plot(data["dynamics"][:, 0], data["dynamics"][:, 1], data["dynamics"][:, 2])
+
+# fig2 = plt.figure()
+# ax = fig2.add_subplot(111, projection="3d")
+# ax.plot_surface(data["surface"][:, 0].reshape(100, 100), data["surface"][:, 1].reshape(
+#     100, 100), data["surface"][:, 2].reshape(100, 100), cmap=cm.jet)
+
+# ax.set_xlim3d(-10, 10)
+# ax.set_ylim3d(-10, 10)
+# ax.set_zlim3d(-10, 10)
 
 # # 3D load distribution
 # fig2 = plt.figure()
