@@ -104,127 +104,129 @@ Eigen::VectorXd generate_target(size_t dim, const std::vector<double>& input)
 
 int main(int argc, char const* argv[])
 {
-    size_t resolution = 100;
+    // size_t resolution = 100;
 
-    // Circle
-    double radius = 0.05;
-    Eigen::Vector2d circle_reference;
-    circle_reference << 0, 0;
-    Eigen::VectorXd angles(resolution);
-    angles = Eigen::VectorXd::LinSpaced(resolution, 0, 2 * M_PI);
+    // // Circle
+    // double radius = 0.05;
+    // Eigen::Vector2d circle_reference;
+    // circle_reference << 0, 0;
+    // Eigen::VectorXd angles(resolution);
+    // angles = Eigen::VectorXd::LinSpaced(resolution, 0, 2 * M_PI);
 
-    // Plane
-    double length = 1, width = 0.5;
-    Eigen::Vector3d plane_reference;
-    plane_reference << 1, 2, -3;
-    Eigen::Matrix3d frame;
-    frame = Eigen::AngleAxisd(0.25 * M_PI, Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(0 * M_PI, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(0 * M_PI, Eigen::Vector3d::UnitZ());
-    Eigen::MatrixXd X(resolution, resolution), Y(resolution, resolution), plane_points(resolution * resolution, 2);
-    X = Eigen::RowVectorXd::LinSpaced(resolution, -length / 2, length / 2).replicate(resolution, 1);
-    Y = Eigen::VectorXd::LinSpaced(resolution, -width / 2, width / 2).replicate(1, resolution);
-    plane_points.col(0) = X.reshaped();
-    plane_points.col(1) = Y.reshaped();
+    // // Plane
+    // double length = 1, width = 0.5;
+    // Eigen::Vector3d plane_reference;
+    // plane_reference << 1, 2, -3;
+    // Eigen::Matrix3d frame;
+    // frame = Eigen::AngleAxisd(0.25 * M_PI, Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(0 * M_PI, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(0 * M_PI, Eigen::Vector3d::UnitZ());
+    // Eigen::MatrixXd X(resolution, resolution), Y(resolution, resolution), plane_points(resolution * resolution, 2);
+    // X = Eigen::RowVectorXd::LinSpaced(resolution, -length / 2, length / 2).replicate(resolution, 1);
+    // Y = Eigen::VectorXd::LinSpaced(resolution, -width / 2, width / 2).replicate(1, resolution);
+    // plane_points.col(0) = X.reshaped();
+    // plane_points.col(1) = Y.reshaped();
 
-    // Dynamics and embeddings
-    CircularDynamics circular_motion(radius);
-    // CircularDynamics circular_motion(radius, circle_reference, plane_reference, frame);
-    Eigen::MatrixXd plane_embedding(resolution * resolution, 3), circle_embedding(resolution, 3);
-    plane_embedding = circular_motion.planeEmbedding(plane_points);
-    circle_embedding = circular_motion.circleEmbedding(angles);
+    // // Dynamics and embeddings
+    // CircularDynamics circular_motion(radius);
+    // // CircularDynamics circular_motion(radius, circle_reference, plane_reference, frame);
+    // Eigen::MatrixXd plane_embedding(resolution * resolution, 3), circle_embedding(resolution, 3);
+    // plane_embedding = circular_motion.planeEmbedding(plane_points);
+    // circle_embedding = circular_motion.circleEmbedding(angles);
 
-    // Particle
-    double mass = 1, step = 0.001;
-    Particle<integrator::ForwardEuler<IntegratorParams>> particle(mass);
+    // // Particle
+    // double mass = 1, step = 0.001;
+    // Particle<integrator::ForwardEuler<IntegratorParams>> particle(mass);
 
-    // Control
-    Eigen::MatrixXd dGains = Eigen::MatrixXd::Identity(3, 3) * 100;
-    controllers::Feedback feedback(ControlSpace::LINEAR, 3, 3, step);
-    feedback.setGains("d", dGains);
+    // // Control
+    // Eigen::MatrixXd dGains = Eigen::MatrixXd::Identity(3, 3) * 100;
+    // controllers::Feedback feedback(ControlSpace::LINEAR, 3, 3, step);
+    // feedback.setGains("d", dGains);
 
-    // GPR
-    size_t dim_gpr = 100, update_freq = 100;
-    double force_reference = 10;
+    // // GPR
+    // size_t dim_gpr = 100, update_freq = 100;
+    // double force_reference = 10;
 
-    Eigen::MatrixXd store(dim_gpr, 3);
-    Eigen::VectorXd target(dim_gpr), weights(dim_gpr);
+    // Eigen::MatrixXd store(dim_gpr, 3);
+    // Eigen::VectorXd target(dim_gpr), weights(dim_gpr);
 
-    kernels::Rbf<KernelParams> k;
-    kernel_lib::utils::Expansion<ExpansionParams, kernels::Rbf<ExpansionParams>> psi;
+    // kernels::Rbf<KernelParams> k;
+    // kernel_lib::utils::Expansion<ExpansionParams, kernels::Rbf<ExpansionParams>> psi;
 
-    // Simulation
-    double time = 0, max_time = 30;
-    size_t num_steps = std::ceil(max_time / step) + 1, index = 0, dim = 3;
+    // // Simulation
+    // double time = 0, max_time = 30;
+    // size_t num_steps = std::ceil(max_time / step) + 1, index = 0, dim = 3;
 
-    Eigen::Vector3d u = Eigen::Vector3d::Zero(), f_adapt = Eigen::Vector3d::Zero();
-    Eigen::VectorXd x(2 * dim), ref = Eigen::VectorXd::Zero(2 * dim), log_t(num_steps);
-    Eigen::MatrixXd log_x(num_steps, 2 * dim), log_u(num_steps, dim);
-    x << 0.1, 0, 0.2, 0, 0, 0;
+    // Eigen::Vector3d u = Eigen::Vector3d::Zero(), f_adapt = Eigen::Vector3d::Zero();
+    // Eigen::VectorXd x(2 * dim), ref = Eigen::VectorXd::Zero(2 * dim), log_t(num_steps);
+    // Eigen::MatrixXd log_x(num_steps, 2 * dim), log_u(num_steps, dim);
+    // x << 0.1, 0, 0.2, 0, 0, 0;
 
-    particle.setState(x).setInput(u);
+    // particle.setState(x).setInput(u);
 
-    log_t(index) = time;
-    log_u.row(index) = u;
-    log_x.row(index) = x;
+    // log_t(index) = time;
+    // log_u.row(index) = u;
+    // log_x.row(index) = x;
 
-    // store.push_back(x.head(3));
-    // target.push_back(force_reference);
-    store.row(index) = x.head(3);
-    target(index) = force_reference;
+    // // store.push_back(x.head(3));
+    // // target.push_back(force_reference);
+    // store.row(index) = x.head(3);
+    // target(index) = force_reference;
 
-    while (time < max_time && index < num_steps) {
-        // Control force for circular motion
-        ref.tail(3) = circular_motion.dynamics(time, x.head(3), u);
-        feedback.setReference(ref);
-        u = feedback.update(x);
+    // while (time < max_time && index < num_steps) {
+    //     // Control force for circular motion
+    //     ref.tail(3) = circular_motion.dynamics(time, x.head(3), u);
+    //     feedback.setReference(ref);
+    //     u = feedback.update(x);
 
-        // Adaptation (activate after 100 steps)
-        if (index >= 99) {
-            if (!((index + 1) % update_freq)) {
-                weights = k(store, store).colPivHouseholderQr().solve(target);
-                psi.setReference(store).setWeights(weights);
-            }
-            f_adapt(2) = psi(x.head(3).transpose())(0);
-        }
+    //     // Adaptation (activate after 100 steps)
+    //     if (index >= 99) {
+    //         if (!((index + 1) % update_freq)) {
+    //             weights = k(store, store).colPivHouseholderQr().solve(target);
+    //             psi.setReference(store).setWeights(weights);
+    //         }
+    //         f_adapt(2) = psi(x.head(3).transpose())(0);
+    //     }
 
-        // Step
-        particle.setInput(u + f_adapt);
-        particle.update(time);
-        x = particle.state();
+    //     // Step
+    //     particle.setInput(u + f_adapt);
+    //     particle.update(time);
+    //     x = particle.state();
 
-        // Increment counters
-        time += step;
-        index++;
+    //     // Increment counters
+    //     time += step;
+    //     index++;
 
-        // Store & order points
-        if (index < dim_gpr) {
-            store.row(index) = x.head(3);
-            target(index) = frame.transpose().row(2) * particle.surfaceForce(Eigen::VectorXd(x.head(3))) - force_reference;
-        }
-        else {
-            size_t index_ref;
-            double ref, temp;
+    //     // Store & order points
+    //     if (index < dim_gpr) {
+    //         store.row(index) = x.head(3);
+    //         target(index) = frame.transpose().row(2) * particle.surfaceForce(Eigen::VectorXd(x.head(3))) - force_reference;
+    //     }
+    //     else {
+    //         size_t index_ref;
+    //         double ref, temp;
 
-            for (size_t i = 0; i < dim_gpr; i++) {
-                temp = (store.row(i) - x.head(3).transpose()).norm();
-                if (temp > ref) {
-                    ref = temp;
-                    index_ref = i;
-                }
-            }
+    //         for (size_t i = 0; i < dim_gpr; i++) {
+    //             temp = (store.row(i) - x.head(3).transpose()).norm();
+    //             if (temp > ref) {
+    //                 ref = temp;
+    //                 index_ref = i;
+    //             }
+    //         }
 
-            store.row(index_ref) = x.head(3);
-            target(index_ref) = frame.transpose().row(2) * particle.surfaceForce(Eigen::VectorXd(x.head(3))) - force_reference;
-        }
+    //         store.row(index_ref) = x.head(3);
+    //         target(index_ref) = frame.transpose().row(2) * particle.surfaceForce(Eigen::VectorXd(x.head(3))) - force_reference;
+    //     }
 
-        // Record
-        log_t(index) = time;
-        log_x.row(index) = x;
-        log_u.row(index) = u;
-    }
+    //     // Record
+    //     log_t(index) = time;
+    //     log_x.row(index) = x;
+    //     log_u.row(index) = u;
+    // }
 
-    // Write
-    utils_cpp::FileManager io_manager;
+    // // Write
+    // utils_cpp::FileManager io_manager;
 
-    io_manager.setFile("rsc/data_particle.csv");
-    io_manager.write("time", log_t, "state", log_x, "action", log_u, "plane", plane_embedding, "circle", circle_embedding);
+    // io_manager.setFile("rsc/data_particle.csv");
+    // io_manager.write("time", log_t, "state", log_x, "action", log_u, "plane", plane_embedding, "circle", circle_embedding);
+
+    return 0;
 }

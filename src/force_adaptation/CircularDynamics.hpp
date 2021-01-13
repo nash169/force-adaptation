@@ -48,87 +48,33 @@ namespace force_adaptation {
 
         Eigen::Vector3d dynamics(const double& t, const Eigen::VectorXd& x, const Eigen::VectorXd& u)
         {
-            // double r = 0;
-            // Eigen::Vector2d planar_vel;
-            // Eigen::Vector3d velocity, proj;
+            double r = 0;
+            Eigen::Vector2d planar_vel;
+            Eigen::Vector3d velocity, proj;
 
-            // Eigen::Map<Eigen::MatrixXd> center(_circle_reference.data(), 1, 2);
-            // Eigen::VectorXd offset(3);
-            // offset = planeEmbedding(center).row(0);
+            Eigen::Map<Eigen::MatrixXd> center(_circle_reference.data(), 1, 2);
+            Eigen::VectorXd offset(3);
+            offset = planeEmbedding(center).row(0);
 
-            // // Projection over the plane reference frame
-            // proj = _frame.transpose() * (x - offset);
+            // Projection over the plane reference frame
+            proj = _frame.transpose() * (x - offset);
 
-            // // Current rotation radius
-            // r = proj.segment(0, 2).norm();
+            // Current rotation radius
+            r = proj.segment(0, 2).norm();
 
-            // // Planar velocity
-            // planar_vel(0) = _radius - r;
-            // planar_vel(1) = r * M_PI;
+            // Planar velocity
+            planar_vel(0) = _radius - r;
+            planar_vel(1) = r * M_PI;
 
-            // // Plane distace dependent scaling of planar velocity
-            // planar_vel *= exp(-proj(2));
+            // Plane distace dependent scaling of planar velocity
+            planar_vel *= exp(-proj(2));
 
-            // velocity.segment(0, 2) = rotation2D(atan2(proj(1), proj(0))) * planar_vel;
+            velocity.segment(0, 2) = rotation2D(atan2(proj(1), proj(0))) * planar_vel;
 
-            // // Vertical velocity
-            // velocity(2) = -proj(2);
+            // Vertical velocity
+            velocity(2) = -proj(2);
 
-            // return _frame * velocity;
-
-            Eigen::Vector3d vd_circular = circularDS(x.head(3));
-
-            Eigen::Vector3d vd_contact;
-            Eigen::Vector3d n;
-            n << 0.0, 0.0, -1.0;
-
-            vd_contact = (Eigen::Matrix3d::Identity() - n * n.transpose()) * vd_circular;
-            vd_contact.normalize();
-
-            float angle = std::acos(n.dot(vd_contact));
-            float theta = angle * (1 - std::tanh(40 * std::max(0.0, x(2))));
-            Eigen::Vector3d k;
-            k = n.cross(vd_contact);
-
-            Eigen::Matrix3d R, K;
-            R.setIdentity();
-            if (k.norm() > 1e-6) {
-                k.normalize();
-                K << 0.0f, -k(2), k(1),
-                    k(2), 0.0, -k(0),
-                    -k(1), k(0), 0.0;
-                R = Eigen::Matrix3d::Identity() + std::sin(theta) * K + (1 - std::cos(theta)) * K * K;
-            }
-
-            return R * (0.1f * n);
-        }
-
-        Eigen::Vector3d circularDS(const Eigen::Vector3d x)
-        {
-            Eigen::Vector3d center;
-            center << _circle_reference(0), _circle_reference(1), 0.0;
-
-            Eigen::Vector3d xp;
-            xp = x - center;
-
-            double r;
-            r = xp.segment(0, 2).norm();
-
-            double theta;
-            theta = std::atan2(xp(1), xp(0));
-
-            double rd_dot = _radius - r;
-
-            Eigen::Vector3d vd;
-
-            double omega = M_PI;
-
-            vd(0) = (rd_dot * cos(theta)) - (omega * sin(theta) * r);
-            vd(1) = (rd_dot * sin(theta)) + (omega * cos(theta) * r);
-
-            vd(2) = -xp(2);
-
-            return vd;
+            return _frame * velocity;
         }
 
         Eigen::MatrixXd circleEmbedding(const Eigen::VectorXd& x)
@@ -149,6 +95,15 @@ namespace force_adaptation {
                 plane.row(i) = _plane_reference + _frame.col(0) * x(i, 0) + _frame.col(1) * x(i, 1);
 
             return plane;
+        }
+
+        Eigen::MatrixXd surfaceEmbedding(const Eigen::MatrixXd& x)
+        {
+            Eigen::MatrixXd surface(x.rows(), 3);
+
+            surface = (x.col(1).array() * x.col(0).array().sin() - x.col(0).array() * x.col(1).array().cos());
+
+            return surface;
         }
 
     protected:

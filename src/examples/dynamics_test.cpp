@@ -60,34 +60,34 @@ int main(int argc, char const* argv[])
     double time = 0, max_time = 20, step = 0.001;
     size_t num_steps = std::ceil(max_time / step) + 1, index = 0, dim = 3;
 
-    Eigen::VectorXd x(dim), u = Eigen::VectorXd::Zero(1), log_t(num_steps);
-    Eigen::MatrixXd log_x(num_steps, dim);
+    // Eigen::VectorXd x(dim), u = Eigen::VectorXd::Zero(1), log_t(num_steps);
+    // Eigen::MatrixXd log_x(num_steps, dim);
 
-    x << 5, 5, 10;
+    // x << 5, 5, 10;
 
-    integrator::ForwardEuler<IntegratorParams> myInt;
+    // integrator::ForwardEuler<IntegratorParams> myInt;
 
-    log_t(index) = time;
-    log_x.row(index) = x;
+    // log_t(index) = time;
+    // log_x.row(index) = x;
 
-    while (time < max_time && index < num_steps) {
-        x = myInt.integrate(my_ds, &CircularDynamics::dynamics, time, x, u);
+    // while (time < max_time && index < num_steps) {
+    //     x = myInt.integrate(my_ds, &CircularDynamics::dynamics, time, x, u);
 
-        time += step;
-        index++;
+    //     time += step;
+    //     index++;
 
-        log_t(index) = time;
-        log_x.row(index) = x;
-    }
+    //     log_t(index) = time;
+    //     log_x.row(index) = x;
+    // }
 
-    // Write
-    utils_cpp::FileManager io_manager;
+    // // Write
+    // utils_cpp::FileManager io_manager;
 
-    io_manager.setFile("rsc/data_dynamics.csv");
-    io_manager.write("plane", plane_embedding);
-    io_manager.append("circle", circle_embedding);
-    io_manager.append("force", surface_force);
-    io_manager.append("dynamics", log_x);
+    // io_manager.setFile("rsc/data_dynamics.csv");
+    // io_manager.write("plane", plane_embedding);
+    // io_manager.append("circle", circle_embedding);
+    // io_manager.append("force", surface_force);
+    // io_manager.append("dynamics", log_x);
 
     return 0;
 }
