@@ -47,7 +47,7 @@ int main(int argc, char const* argv[])
     Eigen::MatrixXd particle_pos(resolution * resolution, 3);
     particle_pos << plane_points, Eigen::VectorXd::Zero(resolution * resolution);
     surface_force.block(0, 0, surface_force.rows(), 2) = plane_points;
-    surface_force.col(2) = my_particle.surfaceForce(particle_pos);
+    surface_force.col(2) = my_particle.distributionForce(particle_pos);
 
     // Dynamics and embeddings
     CircularDynamics my_ds(radius, circle_reference, plane_reference, frame);
@@ -57,39 +57,35 @@ int main(int argc, char const* argv[])
     surface_embedding = my_ds.surfaceEmbedding(plane_points);
     circle_embedding = my_ds.circleEmbedding(angles);
 
-    // // Integration
-    // double time = 0, max_time = 20, step = 0.001;
-    // size_t num_steps = std::ceil(max_time / step) + 1, index = 0, dim = 3;
+    // Integration
+    double time = 0, max_time = 20, step = 0.001;
+    size_t num_steps = std::ceil(max_time / step) + 1, index = 0, dim = 3;
 
-    // Eigen::VectorXd x(dim), u = Eigen::VectorXd::Zero(1), log_t(num_steps);
-    // Eigen::MatrixXd log_x(num_steps, dim);
+    Eigen::VectorXd x(dim), u = Eigen::VectorXd::Zero(1), log_t(num_steps);
+    Eigen::MatrixXd log_x(num_steps, dim);
 
-    // x << 5, 5, 10;
+    x << 5, 5, 10;
 
-    // integrator::ForwardEuler<IntegratorParams> myInt;
+    integrator::ForwardEuler<IntegratorParams> myInt;
 
-    // log_t(index) = time;
-    // log_x.row(index) = x;
+    log_t(index) = time;
+    log_x.row(index) = x;
 
-    // while (time < max_time && index < num_steps) {
-    //     x = myInt.integrate(my_ds, &CircularDynamics::dynamics, time, x, u);
+    while (time < max_time && index < num_steps) {
+        x = myInt.integrate(my_ds, &CircularDynamics::dynamics, time, x, u);
 
-    //     time += step;
-    //     index++;
+        time += step;
+        index++;
 
-    //     log_t(index) = time;
-    //     log_x.row(index) = x;
-    // }
+        log_t(index) = time;
+        log_x.row(index) = x;
+    }
 
     // Write
     utils_cpp::FileManager io_manager;
 
     io_manager.setFile("rsc/data_dynamics.csv");
-    io_manager.write("plane", plane_embedding);
-    io_manager.append("surface", surface_embedding);
-    io_manager.append("circle", circle_embedding);
-    io_manager.append("force", surface_force);
-    // io_manager.append("dynamics", log_x);
+    io_manager.write("plane", plane_embedding, "surface", surface_embedding, "circle", circle_embedding, "force", surface_force, "dynamics", log_x);
 
     return 0;
 }

@@ -29,10 +29,12 @@ namespace force_adaptation {
 
         void update(const double& time)
         {
-            // _state.tail(3) = _integrator.integrate(*this, &Particle::acceleration, time, _state.tail(3), _input);
-            // _state.head(3) = _integrator.integrate(*this, &Particle::velocity, time, _state.head(3), _input);
-
             _state = _integrator.integrate(*this, &Particle::dynamics, time, _state, _input);
+        }
+
+        double mass()
+        {
+            return _mass;
         }
 
         Eigen::VectorXd state()
@@ -71,15 +73,10 @@ namespace force_adaptation {
             return _state.tail(3);
         }
 
-        Eigen::VectorXd acceleration(const double& t, const Eigen::VectorXd& x, const Eigen::VectorXd& u)
-        {
-            return (u + surfaceForce(x)) / _mass;
-        }
-
         Eigen::VectorXd dynamics(const double& t, const Eigen::VectorXd& x, const Eigen::VectorXd& u)
         {
             Eigen::VectorXd acc(6);
-            acc << x.tail(3), u + surfaceForce(x.head(3));
+            acc << x.tail(3), (u + surfaceForce(x.head(3))) / _mass;
 
             return acc;
         }
@@ -90,12 +87,12 @@ namespace force_adaptation {
 
             proj = _frame.transpose() * (x - _reference);
 
-            surface_force(2) = (x(1) * sin(x(0)) - x(0) * cos(x(1))) * exp(-x(2));
+            surface_force(2) = (x(1) * sin(x(0)) - x(0) * cos(x(1))) * exp(-x(2)) * 100 + 10;
 
             return _frame * surface_force;
         }
 
-        Eigen::VectorXd surfaceForce(const Eigen::MatrixXd& x)
+        Eigen::VectorXd distributionForce(const Eigen::MatrixXd& x)
         {
             Eigen::VectorXd surface_force(x.rows()), negative_altitude(x.rows());
             negative_altitude = -x.col(2);
@@ -104,27 +101,6 @@ namespace force_adaptation {
 
             return surface_force;
         }
-
-        // Eigen::Vector3d surfaceForce(const Eigen::VectorXd& x)
-        // {
-        //     Eigen::Vector3d surface_force = Eigen::Vector3d::Zero(), proj;
-
-        //     // proj = _frame.transpose() * (x - _reference);
-
-        //     // surface_force(2) = (x(1) * sin(x(0)) - x(0) * cos(x(1))) * exp(-x(2));
-
-        //     if (x(2) < 0.0) {
-        //         // if(x(1)>0.0f)
-        //         surface_force(2) = -(1000 + 100000 * x(0) * x(0) + 400000 * x(1) * x(1)) * (x(2));
-        //         // else
-        //         // {
-        //         //     surface_force(2) = -(2000 +300000*x(0)*x(0)+100000*x(1)*x(1))*(x(2));
-
-        //         // }
-        //     }
-
-        //     return _frame * surface_force;
-        // }
 
     protected:
         double _mass;
