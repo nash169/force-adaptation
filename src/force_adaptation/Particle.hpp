@@ -81,16 +81,36 @@ namespace force_adaptation {
             return acc;
         }
 
+        // Eigen::Vector3d surfaceForce(const Eigen::VectorXd& x)
+        // {
+        //     Eigen::Vector3d surface_force = Eigen::Vector3d::Zero(), proj;
+
+        //     proj = _frame.transpose() * (x - _reference);
+
+        //     surface_force(2) = (x(1) * sin(x(0)) - x(0) * cos(x(1))) * exp(-x(2)) * 100 + 10;
+
+        //     return _frame * surface_force;
+        // }
+
         Eigen::Vector3d surfaceForce(const Eigen::VectorXd& x)
         {
-            Eigen::Vector3d surface_force = Eigen::Vector3d::Zero(), proj;
+            Eigen::Vector3d surface_force;
 
-            proj = _frame.transpose() * (x - _reference);
-
-            surface_force(2) = (x(1) * sin(x(0)) - x(0) * cos(x(1))) * exp(-x(2)) * 100 + 10;
+            if (x(2) < 0)
+                surface_force(2) = -(1000 + 100000 * x(0) * x(0) + 400000 * x(1) * x(1)) * x(2);
 
             return _frame * surface_force;
         }
+
+        // Eigen::Vector3d distributionForce(const Eigen::MatrixXd& x)
+        // {
+        //     Eigen::Vector3d surface_force;
+
+        //     if (x(2) < 0.0f)
+        //         surface_force(2) = -(1000 + 100000 * x(0) * x(0) + 400000 * x(1) * x(1)) * x(2);
+
+        //     return _frame * surface_force;
+        // }
 
         Eigen::VectorXd distributionForce(const Eigen::MatrixXd& x)
         {

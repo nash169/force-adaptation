@@ -11,7 +11,7 @@ from matplotlib import cm
 from utils import get_data
 
 data = get_data(sys.argv[1], "time", "state", "action",
-                "force_measured", "force_adaptation", "plane", "circle")
+                "force_measured", "force_adaptation", "plane", "circle", "scatter")
 
 fig = plt.figure()
 ax = fig.gca(projection="3d")
@@ -30,11 +30,14 @@ ax.set_xlim3d(-1, 1)
 ax.set_ylim3d(-1, 1)
 ax.set_zlim3d(-1, 1)
 
+ax.scatter(data["scatter"][:, 0], data["scatter"][:, 1],
+           data["scatter"][:, 2], color='r')
+
 
 fig = plt.figure()
 ax = fig.gca()
-ax.plot(data["time"], data["force_measured"][:, 2], color='r', linewidth=3)
-ax.plot(data["time"], data["force_adaptation"], color='g', linewidth=3)
+ax.plot(data["time"], data["force_measured"][:, 2], color='r', linewidth=1)
+ax.plot(data["time"], data["force_adaptation"], color='g', linewidth=1)
 # ax.plot(data["time"], 10, color='b', linewidth=3)
 
 plt.show()
