@@ -7,30 +7,10 @@
 #include <integrator_lib/Integrate.hpp>
 #include <utils_cpp/UtilsCpp.hpp>
 
-// Limbo
-#include <limbo/kernel/exp.hpp>
-#include <limbo/kernel/squared_exp_ard.hpp>
-#include <limbo/mean/data.hpp>
-#include <limbo/mean/null_function.hpp>
-#include <limbo/model/gp.hpp>
-#include <limbo/model/gp/kernel_lf_opt.hpp>
-#include <limbo/tools/math.hpp>
-#include <limbo/tools/random_generator.hpp>
-
 using namespace force_adaptation;
 using namespace integrator_lib;
 using namespace control_lib;
 using namespace limbo;
-
-struct GPRParams {
-    struct kernel : public limbo::defaults::kernel {
-        BO_PARAM(bool, optimize_noise, false);
-    };
-    struct kernel_squared_exp_ard : public limbo::defaults::kernel_squared_exp_ard {
-    };
-    struct opt_rprop : public limbo::defaults::opt_rprop {
-    };
-};
 
 struct IntegratorParams {
     struct integrator : public integrator_lib::defaults::integrator {
@@ -62,59 +42,44 @@ int main(int argc, char const* argv[])
     plane_points.col(1) = Y.reshaped();
 
     // Dynamics and embeddings
-    CircularDynamics circular_motion(radius);
-    // CircularDynamics circular_motion(radius, circle_reference, plane_reference, frame);
+    CircularDynamics circular_motion(radius); // CircularDynamics circular_motion(radius, circle_reference, plane_reference, frame);
     Eigen::MatrixXd plane_embedding(resolution * resolution, 3), circle_embedding(resolution, 3);
     plane_embedding = circular_motion.planeEmbedding(plane_points);
     circle_embedding = circular_motion.circleEmbedding(angles);
 
-    // Particle
-    double mass = 1, step = 0.001;
-    Particle<integrator::ForwardEuler<IntegratorParams>> particle(mass);
-
     // Control
+    double ctr_freq = 200;
     Eigen::MatrixXd dGains = Eigen::MatrixXd::Identity(3, 3) * 100;
-    controllers::Feedback feedback(ControlSpace::LINEAR, 3, 3, step);
+    Eigen::Vector3d u = Eigen::Vector3d::Zero();
+    controllers::Feedback feedback(ControlSpace::LINEAR, 3, 3, 1 / ctr_freq);
     feedback.setGains("d", dGains);
 
-    // GPR
-    size_t dim_gpr = 100, update_freq = 100, optim_freq = 10000, activation_time = 1999;
-    double force_reference = -10;
-    Eigen::VectorXd f_desired(3), f_target(3);
-    f_desired << 0, 0, force_reference;
-    f_desired = circular_motion.frame() * f_desired;
+    // Adaptation
+    size_t storage_dim = 100;
+    double update_freq = 1000, optim_freq = 1, activation_time = 2;
+    Eigen::VectorXd gpr_target(3), f_adapt = Eigen::VectorXd::Zero(3);
+    Adaptation adapt(storage_dim, activation_time, update_freq, optim_freq);
 
-    std::vector<Eigen::VectorXd> samples(dim_gpr);
-    std::vector<Eigen::VectorXd> observations(dim_gpr);
-
-    using Kernel_t = kernel::SquaredExpARD<GPRParams>;
-    using Mean_t = mean::NullFunction<GPRParams>;
-    using GP_t = model::GP<GPRParams, Kernel_t, Mean_t, model::gp::KernelLFOpt<GPRParams>>;
-
-    GP_t gp_ard(1, 1);
+    // Particle
+    size_t dim = 3;
+    double mass = 1, load = 10;
+    Particle<integrator::ForwardEuler<IntegratorParams>> particle(mass, load);
+    Eigen::VectorXd x(2 * dim), ref = Eigen::VectorXd::Zero(2 * dim);
+    x << 0.1, 0, 0.2, 0, 0, 0;
+    particle.setState(x).setInput(u + f_adapt);
 
     // Simulation
-    double time = 0, max_time = 60;
-    size_t num_steps = std::ceil(max_time / step) + 2, index = 0, dim = 3;
+    double time = 0, max_time = 60, step = 0.001;
+    size_t num_steps = std::ceil(max_time / step) + 2, index = 0;
 
-    Eigen::Vector3d u = Eigen::Vector3d::Zero(), f_adapt = Eigen::Vector3d::Zero(), f_normal;
-    Eigen::VectorXd x(2 * dim), ref(2 * dim), log_t(num_steps), log_adaptation(num_steps);
+    Eigen::VectorXd log_t(num_steps), log_adaptation(num_steps);
     Eigen::MatrixXd log_x(num_steps, 2 * dim), log_force(num_steps, dim), log_u(num_steps, dim);
-    x << 0.1, 0, 0.2, 0, 0, 0;
-    f_normal << 0, 0, 1;
-
-    particle.setState(x).setInput(u);
 
     log_t(index) = time;
     log_u.row(index) = u;
     log_x.row(index) = x;
     log_force.row(index) = particle.surfaceForce(x.head(3)); // circular_motion.frame() * particle.dynamics(time, x, u).tail(3) * particle.mass();
     log_adaptation(index) = f_adapt(2);
-
-    samples[index] = x.head(3);
-
-    f_target = circular_motion.frame() * particle.dynamics(time, x, u).tail(3) * particle.mass();
-    observations[index] = limbo::tools::make_vector(f_target(2));
 
     while (time < max_time && index < num_steps) {
         // Control force for circular motion
@@ -123,48 +88,18 @@ int main(int argc, char const* argv[])
         u = feedback.update(x);
 
         // Adaptation (activate after 100 steps)
-        if (index >= activation_time) {
-            if (!((index + 1) % update_freq)) {
-                gp_ard.compute(samples, observations, false);
-
-                if (!((index + 1) % optim_freq) || index == activation_time)
-                    gp_ard.optimize_hyperparams();
-            }
-
-            f_adapt(2) = gp_ard.mu(x.head(3))(0);
-        }
+        f_adapt = adapt.update(x.head(3), time);
+        gpr_target = particle.dynamics(time, x, u - f_adapt).tail(3) * particle.mass() - u;
+        adapt.store(x.head(3), gpr_target);
 
         // Step
-        particle.setInput(u + circular_motion.frame() * f_adapt + f_desired);
+        particle.setInput(u - f_adapt); // circular_motion.frame() *
         particle.update(time);
         x = particle.state();
 
         // Increment counters
         time += step;
         index++;
-
-        // Store & order points
-        if (index < dim_gpr) {
-            samples[index] = x.head(3);
-            f_target = circular_motion.frame() * particle.dynamics(time, x, u).tail(3) * particle.mass(); //circular_motion.frame() * (-f_desired - particle.surfaceForce(x.head(3)));
-            observations[index] = limbo::tools::make_vector(f_target(2));
-        }
-        else {
-            size_t index_ref;
-            double ref = 0, temp;
-
-            for (size_t i = 0; i < dim_gpr; i++) {
-                temp = (samples[i] - x.head(3)).norm();
-                if (temp > ref) {
-                    ref = temp;
-                    index_ref = i;
-                }
-            }
-
-            samples[index_ref] = x.head(3);
-            f_target = circular_motion.frame() * particle.dynamics(time, x, u).tail(3) * particle.mass(); //circular_motion.frame() * (-f_desired - particle.surfaceForce(x.head(3))) + f_normal * gp_ard.mu(x.head(3))(0);
-            observations[index_ref] = limbo::tools::make_vector(f_target(2));
-        }
 
         // Record
         log_t(index) = time;
@@ -180,12 +115,11 @@ int main(int argc, char const* argv[])
     io_manager.setFile("rsc/data_learn.csv");
     io_manager.write("time", log_t, "state", log_x, "action", log_u, "force_measured", log_force, "force_adaptation", log_adaptation, "plane", plane_embedding, "circle", circle_embedding);
 
-    Eigen::MatrixXd scatter(samples.size(), 3);
-    for (size_t i = 0; i < samples.size(); i++)
-        scatter.row(i) = samples[i];
+    // Eigen::MatrixXd scatter(samples.size(), 3);
+    // for (size_t i = 0; i < samples.size(); i++)
+    //     scatter.row(i) = samples[i];
 
-    io_manager.append("scatter", scatter);
+    // io_manager.append("scatter", scatter);
 
-    std::cout << gp_ard.kernel_function().h_params().transpose() << std::endl;
     return 0;
 }

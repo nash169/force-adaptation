@@ -7,14 +7,19 @@
 namespace force_adaptation {
     class CircularDynamics {
     public:
-        CircularDynamics(const double radius = 1, const Eigen::Vector2d& circle_reference = Eigen::Vector2d::Zero(), const Eigen::Vector3d& plane_reference = Eigen::Vector3d::Zero(), const Eigen::Matrix3d& frame = Eigen::Matrix3d::Identity()) : _radius(radius), _circle_reference(circle_reference), _plane_reference(plane_reference), _frame(frame) {}
+        CircularDynamics(const double radius = 1, const Eigen::Vector2d& circle_reference = Eigen::Vector2d::Zero(), const Eigen::Vector3d& plane_reference = Eigen::Vector3d::Zero(), const Eigen::Matrix3d& frame = Eigen::Matrix3d::Identity())
+            : _radius(radius), _circle_reference(circle_reference), _plane_reference(plane_reference), _frame(frame) {}
 
         ~CircularDynamics() {}
 
-        Eigen::Matrix3d frame()
+        /* Getter method */
+
+        Eigen::Matrix3d frame() const
         {
             return _frame;
         }
+
+        /* Setter method */
 
         CircularDynamics& setRadius(const double radius)
         {
@@ -51,15 +56,17 @@ namespace force_adaptation {
             return *this;
         }
 
-        Eigen::Vector3d dynamics(const double& t, const Eigen::VectorXd& x, const Eigen::VectorXd& u)
+        /* Dynamics */
+
+        Eigen::Vector3d dynamics(const double& t, const Eigen::VectorXd& x, const Eigen::VectorXd& u) const
         {
             double r = 0;
             Eigen::Vector2d planar_vel;
             Eigen::Vector3d velocity, proj;
 
-            Eigen::Map<Eigen::MatrixXd> center(_circle_reference.data(), 1, 2);
+            // Eigen::Map<Eigen::MatrixXd> center(_circle_reference.data(), 1, 2);
             Eigen::VectorXd offset(3);
-            offset = planeEmbedding(center).row(0);
+            offset = planeEmbedding(_circle_reference.transpose()).row(0);
 
             // Projection over the plane reference frame
             proj = _frame.transpose() * (x - offset);
@@ -82,7 +89,9 @@ namespace force_adaptation {
             return _frame * velocity;
         }
 
-        Eigen::MatrixXd circleEmbedding(const Eigen::VectorXd& x)
+        /* Embeddings */
+
+        Eigen::MatrixXd circleEmbedding(const Eigen::VectorXd& x) const
         {
             Eigen::MatrixXd circle_points(x.rows(), 2), circle_embedding(x.rows(), 3);
 
@@ -92,7 +101,7 @@ namespace force_adaptation {
             return circle_embedding;
         }
 
-        Eigen::MatrixXd planeEmbedding(const Eigen::MatrixXd& x)
+        Eigen::MatrixXd planeEmbedding(const Eigen::MatrixXd& x) const
         {
             Eigen::MatrixXd plane(x.rows(), 3);
 
@@ -102,7 +111,7 @@ namespace force_adaptation {
             return plane;
         }
 
-        Eigen::MatrixXd surfaceEmbedding(const Eigen::MatrixXd& x)
+        Eigen::MatrixXd surfaceEmbedding(const Eigen::MatrixXd& x) const
         {
             Eigen::MatrixXd surface(x.rows(), 3);
 
@@ -119,7 +128,7 @@ namespace force_adaptation {
         Eigen::Vector3d _plane_reference;
         Eigen::Matrix3d _frame;
 
-        Eigen::MatrixXd circle(const Eigen::VectorXd& angle)
+        Eigen::MatrixXd circle(const Eigen::VectorXd& angle) const
         {
             Eigen::MatrixXd x(angle.rows(), 2);
 
@@ -129,7 +138,7 @@ namespace force_adaptation {
             return x;
         }
 
-        Eigen::Matrix2d rotation2D(const double angle)
+        Eigen::Matrix2d rotation2D(const double angle) const
         {
             Eigen::Matrix2d rotation;
 

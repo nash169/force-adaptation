@@ -17,39 +17,51 @@ namespace force_adaptation {
     template <typename Integrator = integrator::ForwardEuler<DefaultParams>>
     class Particle {
     public:
-        Particle(const double mass = 1, const Eigen::Vector3d& reference = Eigen::Vector3d::Zero(), const Eigen::Matrix3d& frame = Eigen::Matrix3d::Identity(), const double step = 0.001) : _mass(mass), _frame(frame), _reference(reference)
+        Particle(const double& mass = 1, const double& load = 0, const Eigen::Vector3d& reference = Eigen::Vector3d::Zero(), const Eigen::Matrix3d& frame = Eigen::Matrix3d::Identity())
+            : _mass(mass), _load(load), _frame(frame), _reference(reference)
         {
             _integrator = Integrator();
-            _integrator.setStep(step);
+
             _state = Eigen::VectorXd::Zero(6);
             _input = Eigen::VectorXd::Zero(3);
         }
 
         ~Particle() {}
 
-        void update(const double& time)
-        {
-            _state = _integrator.integrate(*this, &Particle::dynamics, time, _state, _input);
-        }
+        /* Getter method */
 
-        double mass()
+        double mass() const
         {
             return _mass;
         }
 
-        Eigen::VectorXd state()
+        double load() const
+        {
+            return _load;
+        }
+
+        Eigen::VectorXd state() const
         {
             return _state;
         }
 
-        Eigen::VectorXd input()
+        Eigen::VectorXd input() const
         {
             return _input;
         }
 
+        /* Setter method */
+
         Particle& setMass(const double& mass)
         {
             _mass = mass;
+
+            return *(this);
+        }
+
+        Particle& setLoad(const double& load)
+        {
+            _load = load;
 
             return *(this);
         }
@@ -68,18 +80,34 @@ namespace force_adaptation {
             return *this;
         }
 
-        Eigen::VectorXd velocity(const double& t, const Eigen::VectorXd& x, const Eigen::VectorXd& u)
-        {
-            return _state.tail(3);
-        }
+        /* Dynamics and Integration */
 
-        Eigen::VectorXd dynamics(const double& t, const Eigen::VectorXd& x, const Eigen::VectorXd& u)
+        Eigen::VectorXd dynamics(const double& t, const Eigen::VectorXd& x, const Eigen::VectorXd& u) const
         {
             Eigen::VectorXd acc(6);
-            acc << x.tail(3), (u + surfaceForce(x.head(3))) / _mass;
+            acc << x.tail(3), (u + surfaceForce(x.head(3)) + contactForce(x.head(3))) / _mass; // (u + surfaceForce(x.head(3)) + contactForce(x.head(3))) / _mass;
 
             return acc;
         }
+
+        void update(const double& time)
+        {
+            _state = _integrator.integrate(*this, &Particle::dynamics, time, _state, _input);
+        }
+
+        /* Contact force */
+
+        Eigen::Vector3d contactForce(const Eigen::Vector3d& x) const
+        {
+            Eigen::Vector3d contact_force = Eigen::Vector3d::Zero();
+
+            if (x(2) < 0.01)
+                contact_force(2) = -_load;
+
+            return _frame * contact_force;
+        }
+
+        /* Surface force */
 
         // Eigen::Vector3d surfaceForce(const Eigen::VectorXd& x)
         // {
@@ -92,9 +120,9 @@ namespace force_adaptation {
         //     return _frame * surface_force;
         // }
 
-        Eigen::Vector3d surfaceForce(const Eigen::VectorXd& x)
+        Eigen::Vector3d surfaceForce(const Eigen::VectorXd& x) const
         {
-            Eigen::Vector3d surface_force;
+            Eigen::Vector3d surface_force = Eigen::Vector3d::Zero();
 
             if (x(2) < 0)
                 surface_force(2) = -(1000 + 100000 * x(0) * x(0) + 400000 * x(1) * x(1)) * x(2);
@@ -112,7 +140,7 @@ namespace force_adaptation {
         //     return _frame * surface_force;
         // }
 
-        Eigen::VectorXd distributionForce(const Eigen::MatrixXd& x)
+        Eigen::VectorXd distributionForce(const Eigen::MatrixXd& x) const
         {
             Eigen::VectorXd surface_force(x.rows()), negative_altitude(x.rows());
             negative_altitude = -x.col(2);
@@ -123,7 +151,7 @@ namespace force_adaptation {
         }
 
     protected:
-        double _mass;
+        double _mass, _load;
 
         Eigen::Vector3d _reference;
         Eigen::Matrix3d _frame;

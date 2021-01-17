@@ -39,5 +39,6 @@ ax = fig.gca()
 ax.plot(data["time"], data["force_measured"][:, 2], color='r', linewidth=1)
 ax.plot(data["time"], data["force_adaptation"], color='g', linewidth=1)
 # ax.plot(data["time"], 10, color='b', linewidth=3)
+# ax.set_ylim(0, 15)
 
 plt.show()
