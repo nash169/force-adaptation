@@ -56,7 +56,7 @@ int main(int argc, char const* argv[])
 
     // Adaptation
     size_t storage_dim = 100;
-    double update_freq = 1000, optim_freq = 1, activation_time = 2;
+    double update_freq = 500, optim_freq = 0.01, activation_time = 2;
     Eigen::VectorXd gpr_target(3), f_adapt = Eigen::VectorXd::Zero(3);
     Adaptation adapt(storage_dim, activation_time, update_freq, optim_freq);
 
@@ -88,12 +88,13 @@ int main(int argc, char const* argv[])
         u = feedback.update(x);
 
         // Adaptation (activate after 100 steps)
+        // std::cout << time << std::endl;
         f_adapt = adapt.update(x.head(3), time);
-        gpr_target = particle.dynamics(time, x, u - f_adapt).tail(3) * particle.mass() - u;
+        gpr_target = particle.dynamics(time, x, u + f_adapt).tail(3) * particle.mass() - u;
         adapt.store(x.head(3), gpr_target);
 
         // Step
-        particle.setInput(u - f_adapt); // circular_motion.frame() *
+        particle.setInput(u + f_adapt); // circular_motion.frame() *
         particle.update(time);
         x = particle.state();
 
@@ -115,11 +116,12 @@ int main(int argc, char const* argv[])
     io_manager.setFile("rsc/data_learn.csv");
     io_manager.write("time", log_t, "state", log_x, "action", log_u, "force_measured", log_force, "force_adaptation", log_adaptation, "plane", plane_embedding, "circle", circle_embedding);
 
-    // Eigen::MatrixXd scatter(samples.size(), 3);
-    // for (size_t i = 0; i < samples.size(); i++)
-    //     scatter.row(i) = samples[i];
+    Eigen::MatrixXd scatter(storage_dim, 3);
 
-    // io_manager.append("scatter", scatter);
+    for (size_t i = 0; i < storage_dim; i++)
+        scatter.row(i) = adapt.samples().at(i);
+
+    io_manager.append("scatter", scatter);
 
     return 0;
 }

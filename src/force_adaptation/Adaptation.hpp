@@ -28,6 +28,7 @@ namespace force_adaptation {
 
     struct Params {
         struct kernel : public limbo::defaults::kernel {
+            // BO_PARAM(double, noise, 0.0);
             BO_PARAM(bool, optimize_noise, true);
         };
         struct kernel_squared_exp_ard : public limbo::defaults::kernel_squared_exp_ard {
@@ -53,12 +54,17 @@ namespace force_adaptation {
 
         ~Adaptation() {}
 
+        std::vector<Eigen::VectorXd> samples()
+        {
+            return _samples;
+        }
+
         void store(const Eigen::VectorXd& sample, const Eigen::VectorXd& observation)
         {
             _samples.push_back(sample);
             _observations.push_back(limbo::tools::make_vector(observation(2)));
 
-            if (_samples.size() < _storage_dim) {
+            if (_samples.size() > _storage_dim) {
                 _samples.erase(_samples.begin(), _samples.begin() + 1);
                 _observations.erase(_observations.begin(), _observations.begin() + 1);
             }
@@ -79,18 +85,15 @@ namespace force_adaptation {
             // observations[index_ref] = limbo::tools::make_vector(f_target(2));
         }
 
-        Eigen::Vector3d update(const Eigen::VectorXd& x, const double& time)
+        Eigen::Vector3d update(const Eigen::VectorXd& x, float time)
         {
-            double update, opitm;
-
-            std::modf(time * _update_freq, &update);
-            std::modf(time * _optim_freq, &opitm);
+            float upd_time = time * _update_freq, opt_time = time * _optim_freq;
 
             if (time >= _activation_time) {
-                if (time * _update_freq == update) {
+                if (ceilf(upd_time) == upd_time) {
                     _gpr.compute(_samples, _observations, true);
 
-                    if (time * _optim_freq == opitm || time == _activation_time)
+                    if (ceilf(opt_time) == opt_time || time == _activation_time)
                         _gpr.optimize_hyperparams();
                 }
 
