@@ -54,35 +54,20 @@ namespace force_adaptation {
 
         ~Adaptation() {}
 
-        std::vector<Eigen::VectorXd> samples()
+        std::vector<Eigen::VectorXd> samples() const
         {
             return _samples;
         }
 
-        void store(const Eigen::VectorXd& sample, const Eigen::VectorXd& observation)
+        void store(const Eigen::VectorXd& sample, const Eigen::VectorXd& observation, bool noise = false)
         {
-            _samples.push_back(sample);
-            _observations.push_back(limbo::tools::make_vector(observation(2)));
-
-            if (_samples.size() > _storage_dim) {
-                _samples.erase(_samples.begin(), _samples.begin() + 1);
-                _observations.erase(_observations.begin(), _observations.begin() + 1);
+            if (_samples.size() == _storage_dim) {
+                nearestNeighborhoods(sample, observation, noise);
             }
-
-            // size_t index_ref;
-            // double ref = 0, temp;
-
-            // for (size_t i = 0; i < dim_gpr; i++) {
-            //     temp = (samples[i] - x.head(3)).norm();
-            //     if (temp > ref) {
-            //         ref = temp;
-            //         index_ref = i;
-            //     }
-            // }
-
-            // samples[index_ref] = x.head(3);
-            // f_target = particle.dynamics(time, x, u).tail(3) * particle.mass() - u; // circular_motion.frame() *
-            // observations[index_ref] = limbo::tools::make_vector(f_target(2));
+            else {
+                _samples.push_back(sample);
+                _observations.push_back(limbo::tools::make_vector(observation(2)) + (noise ? limbo::tools::random_vector(1) : limbo::tools::make_vector(0.0)));
+            }
         }
 
         Eigen::Vector3d update(const Eigen::VectorXd& x, float time)
@@ -113,6 +98,32 @@ namespace force_adaptation {
         std::vector<Eigen::VectorXd> _observations;
 
         GP_t _gpr;
+
+        void movingWindow(const Eigen::VectorXd& sample, const Eigen::VectorXd& observation, bool noise)
+        {
+            _samples.push_back(sample);
+            _observations.push_back(limbo::tools::make_vector(observation(2)) + (noise ? limbo::tools::random_vector(1) : limbo::tools::make_vector(0.0)));
+
+            _samples.erase(_samples.begin(), _samples.begin() + 1);
+            _observations.erase(_observations.begin(), _observations.begin() + 1);
+        }
+
+        void nearestNeighborhoods(const Eigen::VectorXd& sample, const Eigen::VectorXd& observation, bool noise)
+        {
+            size_t index_ref;
+            double ref = 0, temp;
+
+            for (size_t i = 0; i < _storage_dim; i++) {
+                temp = (_samples[i] - sample).norm();
+                if (temp > ref) {
+                    ref = temp;
+                    index_ref = i;
+                }
+            }
+
+            _samples[index_ref] = sample;
+            _observations[index_ref] = limbo::tools::make_vector(observation(2)) + (noise ? limbo::tools::random_vector(1) : limbo::tools::make_vector(0.0));
+        }
     };
 } // namespace force_adaptation
 

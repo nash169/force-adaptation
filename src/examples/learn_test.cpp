@@ -91,7 +91,7 @@ int main(int argc, char const* argv[])
         // std::cout << time << std::endl;
         f_adapt = adapt.update(x.head(3), time);
         gpr_target = particle.dynamics(time, x, u + f_adapt).tail(3) * particle.mass() - u;
-        adapt.store(x.head(3), gpr_target);
+        adapt.store(x.head(3), gpr_target, false);
 
         // Step
         particle.setInput(u + f_adapt); // circular_motion.frame() *
