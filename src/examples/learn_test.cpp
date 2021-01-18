@@ -56,7 +56,7 @@ int main(int argc, char const* argv[])
 
     // Adaptation
     size_t storage_dim = 100;
-    double update_freq = 500, optim_freq = 0.01, activation_time = 2;
+    double update_freq = 100, optim_freq = 0.01, activation_time = 2;
     Eigen::VectorXd gpr_target(3), f_adapt = Eigen::VectorXd::Zero(3);
     Adaptation adapt(storage_dim, activation_time, update_freq, optim_freq);
 

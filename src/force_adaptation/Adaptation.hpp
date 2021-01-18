@@ -23,6 +23,9 @@
 #include <limbo/tools/math.hpp>
 #include <limbo/tools/random_generator.hpp>
 
+#define USE_LIBCMAES
+#include <limbo/opt/cmaes.hpp>
+
 namespace force_adaptation {
     using namespace limbo;
 
@@ -37,6 +40,9 @@ namespace force_adaptation {
         };
 
         struct opt_adam : public limbo::defaults::opt_adam {
+        };
+
+        struct opt_cmaes : public limbo::defaults::opt_cmaes {
         };
     };
 
