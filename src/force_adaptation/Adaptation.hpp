@@ -64,7 +64,7 @@ namespace force_adaptation {
             if (_samples.size() == _storage_dim) {
                 nearestNeighborhoods(sample, observation, noise);
             }
-            else {
+            else if (_samples.empty() || (_samples.back() - sample).norm() >= 0.005) {
                 _samples.push_back(sample);
                 _observations.push_back(limbo::tools::make_vector(observation(2)) + (noise ? limbo::tools::random_vector(1) : limbo::tools::make_vector(0.0)));
             }
@@ -76,6 +76,7 @@ namespace force_adaptation {
 
             if (time >= _activation_time) {
                 if (ceilf(upd_time) == upd_time) {
+                    // utils_cpp::Timer timer;
                     _gpr.compute(_samples, _observations, true);
 
                     if (ceilf(opt_time) == opt_time || time == _activation_time)
@@ -101,11 +102,13 @@ namespace force_adaptation {
 
         void movingWindow(const Eigen::VectorXd& sample, const Eigen::VectorXd& observation, bool noise)
         {
-            _samples.push_back(sample);
-            _observations.push_back(limbo::tools::make_vector(observation(2)) + (noise ? limbo::tools::random_vector(1) : limbo::tools::make_vector(0.0)));
+            if ((_samples.back() - sample).norm() >= 0.005) {
+                _samples.push_back(sample);
+                _observations.push_back(limbo::tools::make_vector(observation(2)) + (noise ? limbo::tools::random_vector(1) : limbo::tools::make_vector(0.0)));
 
-            _samples.erase(_samples.begin(), _samples.begin() + 1);
-            _observations.erase(_observations.begin(), _observations.begin() + 1);
+                _samples.erase(_samples.begin(), _samples.begin() + 1);
+                _observations.erase(_observations.begin(), _observations.begin() + 1);
+            }
         }
 
         void nearestNeighborhoods(const Eigen::VectorXd& sample, const Eigen::VectorXd& observation, bool noise)
@@ -121,8 +124,10 @@ namespace force_adaptation {
                 }
             }
 
-            _samples[index_ref] = sample;
-            _observations[index_ref] = limbo::tools::make_vector(observation(2)) + (noise ? limbo::tools::random_vector(1) : limbo::tools::make_vector(0.0));
+            if ((_samples[index_ref] - sample).norm() >= 0.005) {
+                _samples[index_ref] = sample;
+                _observations[index_ref] = limbo::tools::make_vector(observation(2)) + (noise ? limbo::tools::random_vector(1) : limbo::tools::make_vector(0.0));
+            }
         }
     };
 } // namespace force_adaptation
