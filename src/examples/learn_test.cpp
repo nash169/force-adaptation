@@ -56,9 +56,9 @@ int main(int argc, char const* argv[])
 
     // Adaptation
     size_t storage_dim = 100;
-    double update_freq = 100, optim_freq = 0.01, activation_time = 2;
+    double storage_spacing = 0.005, activation_time = 3, update_freq = 100, optim_freq = 0.1;
     Eigen::VectorXd gpr_target(3), f_adapt = Eigen::VectorXd::Zero(3);
-    Adaptation adapt(storage_dim, activation_time, update_freq, optim_freq);
+    Adaptation adapt(storage_dim, storage_spacing, activation_time, update_freq, optim_freq);
 
     // Particle
     size_t dim = 3;
@@ -88,10 +88,8 @@ int main(int argc, char const* argv[])
         u = feedback.update(x);
 
         // Adaptation (activate after 100 steps)
-        // std::cout << time << std::endl;
-        f_adapt = adapt.update(x.head(3), time);
         gpr_target = particle.dynamics(time, x, u + f_adapt).tail(3) * particle.mass() - u;
-        adapt.store(x.head(3), gpr_target, false);
+        f_adapt = adapt.store(x.head(3), gpr_target, false).update().optimize().action(x.head(3), time);
 
         // Step
         particle.setInput(u + f_adapt); // circular_motion.frame() *
@@ -114,7 +112,13 @@ int main(int argc, char const* argv[])
     utils_cpp::FileManager io_manager;
 
     io_manager.setFile("rsc/data_learn.csv");
-    io_manager.write("time", log_t, "state", log_x, "action", log_u, "force_measured", log_force, "force_adaptation", log_adaptation, "plane", plane_embedding, "circle", circle_embedding);
+    io_manager.write("time", log_t,
+        "state", log_x,
+        "action", log_u,
+        "force_measured", log_force,
+        "force_adaptation", log_adaptation,
+        "plane", plane_embedding,
+        "circle", circle_embedding);
 
     Eigen::MatrixXd scatter(storage_dim, 3);
 

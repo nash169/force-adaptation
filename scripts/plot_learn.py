@@ -31,7 +31,7 @@ ax.set_ylim3d(-1, 1)
 ax.set_zlim3d(-1, 1)
 
 ax.scatter(data["scatter"][:, 0], data["scatter"][:, 1],
-           data["scatter"][:, 2], color='r')
+           data["scatter"][:, 2], color='r', linewidths=0.5)
 
 
 fig = plt.figure()

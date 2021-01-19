@@ -79,7 +79,7 @@ namespace force_adaptation {
             planar_vel(1) = r * M_PI;
 
             // Plane distace dependent scaling of planar velocity
-            planar_vel *= exp(-proj(2) * 10);
+            planar_vel *= exp(-proj(2) * 50);
 
             velocity.segment(0, 2) = rotation2D(atan2(proj(1), proj(0))) * planar_vel;
 
