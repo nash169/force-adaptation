@@ -21,7 +21,7 @@ namespace force_adaptation {
     struct Params {
         struct kernel : public limbo::defaults::kernel {
             // BO_PARAM(double, noise, 0.0);
-            BO_PARAM(bool, optimize_noise, false);
+            BO_PARAM(bool, optimize_noise, true);
         };
         struct kernel_squared_exp_ard : public limbo::defaults::kernel_squared_exp_ard {
         };
@@ -34,7 +34,7 @@ namespace force_adaptation {
 
     using Kernel_t = kernel::SquaredExpARD<Params>;
     using Mean_t = mean::NullFunction<Params>;
-    using GP_t = model::GP<Params, Kernel_t, Mean_t, model::gp::KernelLFOpt<Params, opt::Rprop<Params>>>;
+    using GP_t = model::GP<Params, Kernel_t, Mean_t, model::gp::KernelLFOpt<Params, opt::Adam<Params>>>;
 
     class Adaptation {
     public:
