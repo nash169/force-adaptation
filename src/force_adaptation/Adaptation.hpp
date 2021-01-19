@@ -67,8 +67,10 @@ namespace force_adaptation {
                 nearestNeighborhoods(sample, observation, noise);
             }
             else if (_samples.empty() || (_samples.back() - sample).norm() >= _storage_spacing) {
+                _mutex.lock();
                 _samples.push_back(sample);
                 _observations.push_back(limbo::tools::make_vector(observation(2)) + (noise ? limbo::tools::random_vector(1) : limbo::tools::make_vector(0.0)));
+                _mutex.unlock();
             }
 
             return *(this);
@@ -114,6 +116,7 @@ namespace force_adaptation {
         GP_t _gpr;
 
         std::vector<std::thread> _threads;
+        std::mutex _mutex;
 
         void thread_update()
         {
@@ -135,11 +138,13 @@ namespace force_adaptation {
         void movingWindow(const Eigen::VectorXd& sample, const Eigen::VectorXd& observation, bool noise)
         {
             if ((_samples.back() - sample).norm() >= _storage_spacing) {
+                _mutex.lock();
                 _samples.push_back(sample);
                 _observations.push_back(limbo::tools::make_vector(observation(2)) + (noise ? limbo::tools::random_vector(1) : limbo::tools::make_vector(0.0)));
 
                 _samples.erase(_samples.begin(), _samples.begin() + 1);
                 _observations.erase(_observations.begin(), _observations.begin() + 1);
+                _mutex.unlock();
             }
         }
 
@@ -164,8 +169,10 @@ namespace force_adaptation {
             }
 
             if (add_point) {
+                _mutex.lock();
                 _samples[index_ref] = sample;
                 _observations[index_ref] = limbo::tools::make_vector(observation(2)) + (noise ? limbo::tools::random_vector(1) : limbo::tools::make_vector(0.0));
+                _mutex.unlock();
             }
         }
     };
