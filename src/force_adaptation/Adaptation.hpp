@@ -1,6 +1,8 @@
 #ifndef FORCEADAPTATION_ADAPATATION_HPP
 #define FORCEADAPTATION_ADAPATATION_HPP
 
+#include <future>
+#include <thread>
 #include <vector>
 
 /* Limbo */
@@ -39,7 +41,7 @@ namespace force_adaptation {
     class Adaptation {
     public:
         Adaptation(const size_t& storage_dim = 100, const double& storage_spacing = 0.001, const double& activation_time = 0, const double& update_freq = 1, const double& optim_freq = 1)
-            : _storage_dim(storage_dim), _storage_spacing(storage_spacing), _activation_time(activation_time), _update_freq(update_freq), _optim_freq(optim_freq)
+            : _storage_dim(storage_dim), _storage_spacing(storage_spacing), _activation_time(activation_time), _update_freq(update_freq), _optim_freq(optim_freq), _threads(2)
         {
             _active = false;
             _update_time = 0;
@@ -74,22 +76,15 @@ namespace force_adaptation {
 
         Adaptation& update()
         {
-            if ((_time - _update_time) >= 1 / _update_freq && _time >= _activation_time) {
-                _gpr.compute(_samples, _observations, true);
-                _update_time = _time;
-            }
+            _threads[0] = std::thread(&Adaptation::update, this);
 
             return *(this);
         }
 
         Adaptation& optimize()
         {
-            if ((_time - _optim_time) >= 1 / _optim_freq && _time >= _activation_time) {
-                _gpr.optimize_hyperparams();
-                _optim_time = _time;
-                _active = true;
-                // std::cout << _gpr.kernel_function().h_params().transpose() << std::endl;
-            }
+            _threads[0].join();
+            _threads[1] = std::thread(&Adaptation::optimize, this);
 
             return *(this);
         }
@@ -117,6 +112,25 @@ namespace force_adaptation {
         std::vector<Eigen::VectorXd> _observations;
 
         GP_t _gpr;
+
+        std::vector<std::thread> _threads;
+
+        void update()
+        {
+            if ((_time - _update_time) >= 1 / _update_freq && _time >= _activation_time) {
+                _gpr.compute(_samples, _observations, true);
+                _update_time = _time;
+            }
+        }
+
+        void optimize()
+        {
+            if ((_time - _optim_time) >= 1 / _optim_freq && _time >= _activation_time) {
+                _gpr.optimize_hyperparams();
+                _optim_time = _time;
+                _active = true;
+            }
+        }
 
         void movingWindow(const Eigen::VectorXd& sample, const Eigen::VectorXd& observation, bool noise)
         {
