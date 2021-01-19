@@ -76,7 +76,7 @@ namespace force_adaptation {
 
         Adaptation& update()
         {
-            _threads[0] = std::thread(&Adaptation::update, this);
+            _threads[0] = std::thread(&Adaptation::thread_update, this);
 
             return *(this);
         }
@@ -84,7 +84,7 @@ namespace force_adaptation {
         Adaptation& optimize()
         {
             _threads[0].join();
-            _threads[1] = std::thread(&Adaptation::optimize, this);
+            _threads[1] = std::thread(&Adaptation::thread_optimize, this);
 
             return *(this);
         }
@@ -115,7 +115,7 @@ namespace force_adaptation {
 
         std::vector<std::thread> _threads;
 
-        void update()
+        void thread_update()
         {
             if ((_time - _update_time) >= 1 / _update_freq && _time >= _activation_time) {
                 _gpr.compute(_samples, _observations, true);
@@ -123,7 +123,7 @@ namespace force_adaptation {
             }
         }
 
-        void optimize()
+        void thread_optimize()
         {
             if ((_time - _optim_time) >= 1 / _optim_freq && _time >= _activation_time) {
                 _gpr.optimize_hyperparams();
