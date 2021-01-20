@@ -2,6 +2,7 @@
 #define FORCEADAPTATION_ADAPATATION_HPP
 
 #include <future>
+#include <shared_mutex>
 #include <thread>
 #include <vector>
 
@@ -67,10 +68,10 @@ namespace force_adaptation {
                 nearestNeighborhoods(sample, observation, noise);
             }
             else if (_samples.empty() || (_samples.back() - sample).norm() >= _storage_spacing) {
-                _mutex.lock();
+                std::unique_lock<std::shared_mutex> guard(_shared_mutex);
+
                 _samples.push_back(sample);
                 _observations.push_back(limbo::tools::make_vector(observation(2)) + (noise ? limbo::tools::random_vector(1) : limbo::tools::make_vector(0.0)));
-                _mutex.unlock();
             }
 
             return *(this);
@@ -116,11 +117,12 @@ namespace force_adaptation {
         GP_t _gpr;
 
         std::vector<std::thread> _threads;
-        std::mutex _mutex;
+        std::shared_mutex _shared_mutex;
 
         void thread_update()
         {
             if ((_time - _update_time) >= 1 / _update_freq && _time >= _activation_time) {
+                std::shared_lock<std::shared_mutex> guard(_shared_mutex);
                 _gpr.compute(_samples, _observations, true);
                 _update_time = _time;
             }
@@ -138,13 +140,13 @@ namespace force_adaptation {
         void movingWindow(const Eigen::VectorXd& sample, const Eigen::VectorXd& observation, bool noise)
         {
             if ((_samples.back() - sample).norm() >= _storage_spacing) {
-                _mutex.lock();
+                std::unique_lock<std::shared_mutex> guard(_shared_mutex);
+
                 _samples.push_back(sample);
                 _observations.push_back(limbo::tools::make_vector(observation(2)) + (noise ? limbo::tools::random_vector(1) : limbo::tools::make_vector(0.0)));
 
                 _samples.erase(_samples.begin(), _samples.begin() + 1);
                 _observations.erase(_observations.begin(), _observations.begin() + 1);
-                _mutex.unlock();
             }
         }
 
@@ -169,10 +171,10 @@ namespace force_adaptation {
             }
 
             if (add_point) {
-                _mutex.lock();
+                std::unique_lock<std::shared_mutex> guard(_shared_mutex);
+
                 _samples[index_ref] = sample;
                 _observations[index_ref] = limbo::tools::make_vector(observation(2)) + (noise ? limbo::tools::random_vector(1) : limbo::tools::make_vector(0.0));
-                _mutex.unlock();
             }
         }
     };

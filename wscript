@@ -17,16 +17,14 @@ def options(opt):
     opt.load("compiler_cxx")
 
     # Load tools options
-    opt.load("flags eigen control_lib integrator_lib kernel_lib utils_cpp limbo libcmaes",
+    opt.load("flags eigen control_lib integrator_lib utils_cpp limbo",
              tooldir="waf_tools")
 
     # Add options
-    opt.add_option("--shared",
-                   action="store_true",
+    opt.add_option("--shared", action="store_true",
                    help="build shared library")
 
-    opt.add_option("--static",
-                   action="store_true",
+    opt.add_option("--static", action="store_true",
                    help="build static library")
 
 
@@ -38,13 +36,16 @@ def configure(cfg):
     cfg.load("compiler_cxx")  # cfg.load("clang_compilation_database")
 
     # Define require libraries
-    cfg.get_env()["requires"] += ["EIGEN"]
+    cfg.get_env()["requires"] += ["EIGEN", "LIMBO"]
+
+    # Define C++ Standard
+    cfg.options.cpp_standard = "17"
 
     # Load tools configuration
-    cfg.load("flags eigen control_lib integrator_lib kernel_lib utils_cpp limbo libcmaes",
+    cfg.load("flags eigen control_lib integrator_lib utils_cpp limbo",
              tooldir="waf_tools")
 
-    # Remove duplicates
+    # Remove potential duplicates
     cfg.get_env()["libs"] = list(set(cfg.get_env()["libs"]))
 
     # Set lib type
@@ -84,7 +85,7 @@ def build(bld):
             target=bld.get_env()["libname"],
             includes=includes_path,
             uselib=bld.get_env()["libs"],
-            cxxxflags=bld.get_env()["CXXFLAGS"],
+            cxxflags=bld.get_env()["CXXFLAGS"],
         )
     else:
         bld.stlib(
@@ -93,8 +94,7 @@ def build(bld):
             target=bld.get_env()["libname"],
             includes=includes_path,
             uselib=bld.get_env()["libs"],
-            use="BOOST",
-            cxxxflags=bld.get_env()["CXXFLAGS"],
+            cxxflags=bld.get_env()["CXXFLAGS"],
         )
 
     # Build executables
